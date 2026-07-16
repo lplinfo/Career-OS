@@ -4,17 +4,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CareerOS.Api.Contracts;
 
-public record CandidateProfileRequest(
-    [property: Required, StringLength(200)] string FullName,
-    [property: StringLength(200)] string? PreferredName,
-    [property: Required, StringLength(160)] string ProfessionalTitle,
-    [property: StringLength(4000)] string? ProfessionalSummary,
-    [property: Required, EmailAddress, StringLength(320)] string Email,
-    string? Phone, string? City, string? Region, string? Country,
-    bool OpenToRemoteWork, bool OpenToRelocation,
-    List<WorkExperienceRequest>? WorkExperiences = null,
-    List<EducationRequest>? EducationHistory = null,
-    List<CertificationRequest>? Certifications = null);
+public class CandidateProfileRequest
+{
+    [Required, StringLength(200)] public string FullName { get; set; } = string.Empty;
+    [StringLength(200)] public string? PreferredName { get; set; }
+    [Required, StringLength(160)] public string ProfessionalTitle { get; set; } = string.Empty;
+    [StringLength(4000)] public string? ProfessionalSummary { get; set; }
+    [Required, EmailAddress, StringLength(320)] public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? City { get; set; }
+    public string? Region { get; set; }
+    public string? Country { get; set; }
+    public bool OpenToRemoteWork { get; set; }
+    public bool OpenToRelocation { get; set; }
+    public List<WorkExperienceRequest> WorkExperiences { get; set; } = [];
+    public List<EducationRequest> EducationHistory { get; set; } = [];
+    public List<CertificationRequest> Certifications { get; set; } = [];
+}
 
 public record WorkExperienceRequest(string Company, string Role, DateOnly? StartDate, DateOnly? EndDate, bool IsCurrent, string? Description, int DisplayOrder);
 public record EducationRequest(string Institution, string Course, string? Degree, DateOnly? CompletionDate, int DisplayOrder);
