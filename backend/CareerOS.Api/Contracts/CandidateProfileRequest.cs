@@ -4,69 +4,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CareerOS.Api.Contracts;
 
-public class WorkExperienceRequest
-{
-    public Guid? Id { get; set; }
-    [Required, StringLength(200)]
-    public string CompanyName { get; set; } = string.Empty;
-    [Required, StringLength(160)]
-    public string JobTitle { get; set; } = string.Empty;
-    [StringLength(4000)]
-    public string? Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public bool IsCurrent { get; set; }
-    public int Order { get; set; }
-}
+public record CandidateProfileRequest(
+    [property: Required, StringLength(200)] string FullName,
+    [property: StringLength(200)] string? PreferredName,
+    [property: Required, StringLength(160)] string ProfessionalTitle,
+    [property: StringLength(4000)] string? ProfessionalSummary,
+    [property: Required, EmailAddress, StringLength(320)] string Email,
+    string? Phone, string? City, string? Region, string? Country,
+    bool OpenToRemoteWork, bool OpenToRelocation,
+    List<WorkExperienceRequest>? WorkExperiences = null,
+    List<EducationRequest>? EducationHistory = null,
+    List<CertificationRequest>? Certifications = null);
 
-public class EducationRequest
-{
-    public Guid? Id { get; set; }
-    [Required, StringLength(200)]
-    public string Institution { get; set; } = string.Empty;
-    [Required, StringLength(100)]
-    public string Degree { get; set; } = string.Empty;
-    [Required, StringLength(100)]
-    public string FieldOfStudy { get; set; } = string.Empty;
-    public DateTime StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public bool IsCurrent { get; set; }
-    public int Order { get; set; }
-}
-
-public class CertificationRequest
-{
-    public Guid? Id { get; set; }
-    [Required, StringLength(200)]
-    public string Name { get; set; } = string.Empty;
-    [Required, StringLength(200)]
-    public string IssuingOrganization { get; set; } = string.Empty;
-    public DateTime? IssueDate { get; set; }
-    public DateTime? ExpirationDate { get; set; }
-    public string? CredentialId { get; set; }
-    public string? CredentialUrl { get; set; }
-    public int Order { get; set; }
-}
-
-public class CandidateProfileRequest
-{
-    [Required, StringLength(200)]
-    public string FullName { get; set; } = string.Empty;
-    [StringLength(200)]
-    public string? PreferredName { get; set; }
-    [Required, StringLength(160)]
-    public string ProfessionalTitle { get; set; } = string.Empty;
-    [StringLength(4000)]
-    public string? ProfessionalSummary { get; set; }
-    [Required, EmailAddress, StringLength(320)]
-    public string Email { get; set; } = string.Empty;
-    public string? Phone { get; set; }
-    public string? City { get; set; }
-    public string? Region { get; set; }
-    public string? Country { get; set; }
-    public bool OpenToRemoteWork { get; set; }
-    public bool OpenToRelocation { get; set; }
-    public List<WorkExperienceRequest>? Experiences { get; set; }
-    public List<EducationRequest>? Educations { get; set; }
-    public List<CertificationRequest>? Certifications { get; set; }
-}
+public record WorkExperienceRequest(string Company, string Role, DateOnly? StartDate, DateOnly? EndDate, bool IsCurrent, string? Description, int DisplayOrder);
+public record EducationRequest(string Institution, string Course, string? Degree, DateOnly? CompletionDate, int DisplayOrder);
+public record CertificationRequest(string Name, string? Issuer, DateOnly? IssuedAt, string? CredentialUrl, int DisplayOrder);

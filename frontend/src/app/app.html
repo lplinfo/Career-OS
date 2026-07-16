@@ -21,6 +21,6 @@
     } @else {
       <section formGroupName="skills"><h2>Competências e idiomas</h2><label>Competências técnicas<textarea formControlName="technicalSkills" rows="4" placeholder="Ex.: C#, Angular, PostgreSQL"></textarea></label><label>Idiomas<textarea formControlName="languages" rows="3" placeholder="Ex.: Português — nativo; Inglês — B2"></textarea></label><label>Certificações<textarea formControlName="certifications" rows="3"></textarea></label></section>
     }
-    <footer><button type="button" class="secondary" (click)="previous()" [disabled]="step() === 0">Voltar</button><span>Etapa {{ step() + 1 }} de {{ steps.length }}</span><button type="button" class="primary" (click)="next()" [disabled]="step() === steps.length - 1">Continuar</button></footer>
+    <footer><button type="button" class="secondary" (click)="previous()" [disabled]="step() === 0">Voltar</button><span>{{ saveMessage() || ('Etapa ' + (step() + 1) + ' de ' + steps.length) }}</span>@if (step() === steps.length - 1) { <button type="button" class="primary" (click)="saveProfile()" [disabled]="saving()">{{ saving() ? 'Salvando...' : 'Salvar perfil' }}</button> } @else { <button type="button" class="primary" (click)="next()">Continuar</button> }</footer>
   </form>
 </main>
