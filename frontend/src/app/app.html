@@ -48,7 +48,7 @@
           <div class="grid-2">
             <div class="form-group">
               <label for="fullName">Nome Completo *</label>
-              <input type="text" id="fullName" formControlName="fullName" placeholder="Ex: Jane Doe">
+              <input type="text" id="fullName" formControlName="fullName" placeholder="Ex: Jane Doe" [ngClass]="{ 'field-error': profileForm.get('fullName')?.invalid && profileForm.get('fullName')?.touched }">
               @if (profileForm.get('fullName')?.invalid && profileForm.get('fullName')?.touched) {
                 <span class="error-text">Nome é obrigatório (máx 200 caracteres).</span>
               }
@@ -63,7 +63,7 @@
           <div class="grid-2">
             <div class="form-group">
               <label for="professionalTitle">Cargo / Título Profissional *</label>
-              <input type="text" id="professionalTitle" formControlName="professionalTitle" placeholder="Ex: Senior Software Engineer">
+              <input type="text" id="professionalTitle" formControlName="professionalTitle" placeholder="Ex: Senior Software Engineer" [ngClass]="{ 'field-error': profileForm.get('professionalTitle')?.invalid && profileForm.get('professionalTitle')?.touched }">
               @if (profileForm.get('professionalTitle')?.invalid && profileForm.get('professionalTitle')?.touched) {
                 <span class="error-text">Título é obrigatório (máx 160 caracteres).</span>
               }
@@ -71,7 +71,7 @@
 
             <div class="form-group">
               <label for="email">E-mail *</label>
-              <input type="email" id="email" formControlName="email" placeholder="jane.doe@example.com">
+              <input type="email" id="email" formControlName="email" placeholder="jane.doe@example.com" [ngClass]="{ 'field-error': profileForm.get('email')?.invalid && profileForm.get('email')?.touched }">
               @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
                 <span class="error-text">Insira um e-mail válido.</span>
               }
@@ -81,7 +81,10 @@
           <div class="grid-2">
             <div class="form-group">
               <label for="phone">Telefone</label>
-              <input type="text" id="phone" formControlName="phone" placeholder="Ex: +55 11 99999-9999">
+              <input type="text" id="phone" formControlName="phone" placeholder="Ex: +55 11 99999-9999" [ngClass]="{ 'field-error': profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched }">
+              @if (profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched) {
+                <span class="error-text">Número de telefone inválido (formato internacional esperado).</span>
+              }
             </div>
 
             <div class="form-group">
@@ -136,7 +139,7 @@
             }
 
             @for (exp of experiencesArray.controls; track exp; let idx = $index) {
-              <div [formGroupName]="idx" class="card list-item-card">
+              <div [formGroupName]="idx" class="card list-item-card" [ngClass]="{ 'card-error': exp.invalid && exp.touched }">
                 <div class="card-header">
                   <h3>Experiência #{{ idx + 1 }}</h3>
                   <div class="actions">
@@ -149,22 +152,22 @@
                 <div class="grid-2">
                   <div class="form-group">
                     <label>Empresa *</label>
-                    <input type="text" formControlName="companyName" placeholder="Ex: Google">
+                    <input type="text" formControlName="companyName" placeholder="Ex: Google" [ngClass]="{ 'field-error': exp.get('companyName')?.invalid && exp.get('companyName')?.touched }">
                   </div>
                   <div class="form-group">
                     <label>Cargo *</label>
-                    <input type="text" formControlName="jobTitle" placeholder="Ex: Software Engineer">
+                    <input type="text" formControlName="jobTitle" placeholder="Ex: Software Engineer" [ngClass]="{ 'field-error': exp.get('jobTitle')?.invalid && exp.get('jobTitle')?.touched }">
                   </div>
                 </div>
 
                 <div class="grid-3">
                   <div class="form-group">
                     <label>Data de Início *</label>
-                    <input type="date" formControlName="startDate">
+                    <input type="date" formControlName="startDate" [ngClass]="{ 'field-error': exp.get('startDate')?.invalid && exp.get('startDate')?.touched }">
                   </div>
                   <div class="form-group">
                     <label>Data de Fim</label>
-                    <input type="date" formControlName="endDate" [disabled]="exp.get('isCurrent')?.value">
+                    <input type="date" formControlName="endDate" [disabled]="exp.get('isCurrent')?.value" [ngClass]="{ 'field-error': exp.get('endDate')?.invalid && exp.get('endDate')?.touched }">
                   </div>
                   <div class="form-group checkbox-single">
                     <div class="checkbox-row margin-top-label">
@@ -173,6 +176,12 @@
                     </div>
                   </div>
                 </div>
+
+                @if (exp.errors?.['dateRangeInvalid']) {
+                  <div class="error-text-container">
+                    <span class="error-text">A data de término deve ser posterior à data de início.</span>
+                  </div>
+                }
 
                 <div class="form-group">
                   <label>Descrição das Atividades</label>
@@ -199,7 +208,7 @@
             }
 
             @for (edu of educationsArray.controls; track edu; let idx = $index) {
-              <div [formGroupName]="idx" class="card list-item-card">
+              <div [formGroupName]="idx" class="card list-item-card" [ngClass]="{ 'card-error': edu.invalid && edu.touched }">
                 <div class="card-header">
                   <h3>Formação #{{ idx + 1 }}</h3>
                   <div class="actions">
@@ -212,26 +221,26 @@
                 <div class="grid-3">
                   <div class="form-group">
                     <label>Instituição *</label>
-                    <input type="text" formControlName="institution" placeholder="Ex: USP">
+                    <input type="text" formControlName="institution" placeholder="Ex: USP" [ngClass]="{ 'field-error': edu.get('institution')?.invalid && edu.get('institution')?.touched }">
                   </div>
                   <div class="form-group">
                     <label>Título / Grau *</label>
-                    <input type="text" formControlName="degree" placeholder="Ex: Bacharelado">
+                    <input type="text" formControlName="degree" placeholder="Ex: Bacharelado" [ngClass]="{ 'field-error': edu.get('degree')?.invalid && edu.get('degree')?.touched }">
                   </div>
                   <div class="form-group">
                     <label>Área de Estudo *</label>
-                    <input type="text" formControlName="fieldOfStudy" placeholder="Ex: Ciência da Computação">
+                    <input type="text" formControlName="fieldOfStudy" placeholder="Ex: Ciência da Computação" [ngClass]="{ 'field-error': edu.get('fieldOfStudy')?.invalid && edu.get('fieldOfStudy')?.touched }">
                   </div>
                 </div>
 
                 <div class="grid-3">
                   <div class="form-group">
                     <label>Data de Início *</label>
-                    <input type="date" formControlName="startDate">
+                    <input type="date" formControlName="startDate" [ngClass]="{ 'field-error': edu.get('startDate')?.invalid && edu.get('startDate')?.touched }">
                   </div>
                   <div class="form-group">
                     <label>Data de Fim</label>
-                    <input type="date" formControlName="endDate" [disabled]="edu.get('isCurrent')?.value">
+                    <input type="date" formControlName="endDate" [disabled]="edu.get('isCurrent')?.value" [ngClass]="{ 'field-error': edu.get('endDate')?.invalid && edu.get('endDate')?.touched }">
                   </div>
                   <div class="form-group checkbox-single">
                     <div class="checkbox-row margin-top-label">
@@ -240,6 +249,12 @@
                     </div>
                   </div>
                 </div>
+
+                @if (edu.errors?.['dateRangeInvalid']) {
+                  <div class="error-text-container">
+                    <span class="error-text">A data de término deve ser posterior à data de início.</span>
+                  </div>
+                }
               </div>
             }
           </div>
@@ -261,7 +276,7 @@
             }
 
             @for (cert of certificationsArray.controls; track cert; let idx = $index) {
-              <div [formGroupName]="idx" class="card list-item-card">
+              <div [formGroupName]="idx" class="card list-item-card" [ngClass]="{ 'card-error': cert.invalid && cert.touched }">
                 <div class="card-header">
                   <h3>Certificação #{{ idx + 1 }}</h3>
                   <div class="actions">
@@ -274,11 +289,11 @@
                 <div class="grid-2">
                   <div class="form-group">
                     <label>Nome da Certificação *</label>
-                    <input type="text" formControlName="name" placeholder="Ex: AWS Certified Cloud Practitioner">
+                    <input type="text" formControlName="name" placeholder="Ex: AWS Certified Cloud Practitioner" [ngClass]="{ 'field-error': cert.get('name')?.invalid && cert.get('name')?.touched }">
                   </div>
                   <div class="form-group">
                     <label>Organização Emissora *</label>
-                    <input type="text" formControlName="issuingOrganization" placeholder="Ex: Amazon Web Services">
+                    <input type="text" formControlName="issuingOrganization" placeholder="Ex: Amazon Web Services" [ngClass]="{ 'field-error': cert.get('issuingOrganization')?.invalid && cert.get('issuingOrganization')?.touched }">
                   </div>
                 </div>
 

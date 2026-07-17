@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 
@@ -18,6 +18,18 @@ interface ResumeDto {
   customizedEducationsJson?: string;
   customizedCertificationsJson?: string;
 }
+
+export const dateRangeValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const start = control.get('startDate')?.value;
+  const end = control.get('endDate')?.value;
+  const isCurrent = control.get('isCurrent')?.value;
+
+  if (isCurrent) return null;
+  if (start && end && new Date(start) > new Date(end)) {
+    return { dateRangeInvalid: true };
+  }
+  return null;
+};
 
 @Component({
   selector: 'app-root',
@@ -67,7 +79,7 @@ export class App implements OnInit {
       professionalTitle: ['', [Validators.required, Validators.maxLength(160)]],
       professionalSummary: ['', [Validators.maxLength(4000)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
-      phone: [''],
+      phone: ['', [Validators.pattern(/^\+?[0-9\s\-()]{8,25}$/)]],
       city: [''],
       region: [''],
       country: [''],
@@ -108,7 +120,7 @@ export class App implements OnInit {
       endDate: [data?.endDate ? this.formatDate(data.endDate) : ''],
       isCurrent: [data?.isCurrent || false],
       order: [data?.order ?? this.experiencesArray.length]
-    });
+    }, { validators: dateRangeValidator });
     this.experiencesArray.push(expForm);
   }
 
@@ -137,7 +149,7 @@ export class App implements OnInit {
       endDate: [data?.endDate ? this.formatDate(data.endDate) : ''],
       isCurrent: [data?.isCurrent || false],
       order: [data?.order ?? this.educationsArray.length]
-    });
+    }, { validators: dateRangeValidator });
     this.educationsArray.push(eduForm);
   }
 

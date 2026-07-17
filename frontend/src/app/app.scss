@@ -247,6 +247,18 @@
     font-size: 0.8rem;
     font-weight: 500;
   }
+
+  // Soft red highlighted state
+  input.field-error,
+  select.field-error,
+  textarea.field-error {
+    border-color: #fca5a5 !important;
+    background-color: #fef2f2 !important;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+    }
+  }
 }
 
 .checkbox-group {
@@ -307,6 +319,12 @@
     border-left: 4px solid #6366f1;
   }
 
+  // Highlight card validation error
+  &.card-error {
+    border-left: 4px solid #ef4444 !important;
+    background-color: #fffafb;
+  }
+
   .card-header {
     display: flex;
     justify-content: space-between;
@@ -327,6 +345,21 @@
       align-items: center;
       gap: 0.5rem;
     }
+  }
+}
+
+.error-text-container {
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  display: inline-block;
+
+  .error-text {
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 0.85rem;
   }
 }
 

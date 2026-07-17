@@ -34,6 +34,9 @@ public class CandidateProfilesController(CareerDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CandidateProfile>> Create(CandidateProfileRequest request)
     {
+        var validationError = ValidateRequest(request);
+        if (validationError != null) return BadRequest(new { message = validationError });
+
         var profile = new CandidateProfile();
         db.CandidateProfiles.Add(profile);
         Apply(profile, request);
@@ -44,6 +47,9 @@ public class CandidateProfilesController(CareerDbContext db) : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<CandidateProfile>> Update(Guid id, CandidateProfileRequest request)
     {
+        var validationError = ValidateRequest(request);
+        if (validationError != null) return BadRequest(new { message = validationError });
+
         var profile = await db.CandidateProfiles
             .Include(x => x.Experiences)
             .Include(x => x.Educations)
@@ -74,6 +80,33 @@ public class CandidateProfilesController(CareerDbContext db) : ControllerBase
         db.CandidateProfiles.Remove(profile);
         await db.SaveChangesAsync();
         return NoContent();
+    }
+
+    private static string? ValidateRequest(CandidateProfileRequest request)
+    {
+        if (request.Experiences != null)
+        {
+            foreach (var exp in request.Experiences)
+            {
+                if (!exp.IsCurrent && exp.EndDate.HasValue && exp.StartDate > exp.EndDate.Value)
+                {
+                    return $"Inconsistência na experiência '{exp.CompanyName}': data de início deve ser anterior à de término.";
+                }
+            }
+        }
+
+        if (request.Educations != null)
+        {
+            foreach (var edu in request.Educations)
+            {
+                if (!edu.IsCurrent && edu.EndDate.HasValue && edu.StartDate > edu.EndDate.Value)
+                {
+                    return $"Inconsistência na formação '{edu.Institution}': data de início deve ser anterior à de término.";
+                }
+            }
+        }
+
+        return null;
     }
 
     private void Apply(CandidateProfile profile, CandidateProfileRequest request)
