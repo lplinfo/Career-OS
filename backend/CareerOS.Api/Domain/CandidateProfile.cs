@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace CareerOS.Api.Domain;
 
 public class CandidateProfile
@@ -15,4 +18,10 @@ public class CandidateProfile
     public bool OpenToRemoteWork { get; set; }
     public bool OpenToRelocation { get; set; }
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    // Navigation properties / Collections
+    public List<WorkExperience> Experiences { get; set; } = [];
+    public List<Education> Educations { get; set; } = [];
+    public List<Certification> Certifications { get; set; } = [];
+    public List<Resume> Resumes { get; set; } = [];
 }

@@ -1,0 +1,49 @@
+
+> careeros-web@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names         |  Raw size
+main.js             | main          | 124.91 kB |
+styles.css          | styles        |  96 bytes |
+
+                    | Initial total | 125.00 kB
+
+Application bundle generation complete. [3.381 seconds] - 2026-07-17T20:01:28.945Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 128.48 kB |
+
+Application bundle generation complete. [3.171 seconds] - 2026-07-21T15:30:06.501Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 153.97 kB |
+
+Application bundle generation complete. [2.151 seconds] - 2026-07-21T15:31:44.382Z
+
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 158.80 kB |
+
+Application bundle generation complete. [2.069 seconds] - 2026-07-21T15:32:39.096Z
+
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 159.34 kB |
+
+Application bundle generation complete. [0.922 seconds] - 2026-07-21T15:58:05.150Z
+
+Page reload sent to client(s).

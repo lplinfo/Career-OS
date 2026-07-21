@@ -3,6 +3,7 @@ using System;
 using CareerOS.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CareerOS.Api.Migrations
 {
     [DbContext(typeof(CareerDbContext))]
-    partial class CareerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717164003_InitialAll")]
+    partial class InitialAll
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,36 +224,6 @@ namespace CareerOS.Api.Migrations
                     b.HasIndex("CandidateProfileId");
 
                     b.ToTable("resumes", (string)null);
-                });
-
-            modelBuilder.Entity("CareerOS.Api.Domain.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CandidateProfileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("users", (string)null);
                 });
 
             modelBuilder.Entity("CareerOS.Api.Domain.WorkExperience", b =>
