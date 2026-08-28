@@ -10,9 +10,17 @@ public class CareerDbContext(DbContextOptions<CareerDbContext> options) : DbCont
     public DbSet<Education> EducationHistory => Set<Education>();
     public DbSet<Certification> Certifications => Set<Certification>();
     public DbSet<Resume> Resumes => Set<Resume>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var user = modelBuilder.Entity<User>();
+        user.ToTable("users");
+        user.HasKey(x => x.Id);
+        user.Property(x => x.Email).HasMaxLength(320).IsRequired();
+        user.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
+        user.HasIndex(x => x.Email).IsUnique();
+
         var profile = modelBuilder.Entity<CandidateProfile>();
         profile.ToTable("candidate_profiles");
         profile.HasKey(x => x.Id);
