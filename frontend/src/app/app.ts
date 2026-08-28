@@ -2,6 +2,8 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { AuthSessionService } from './auth/auth-session.service';
+import { UserSession } from './auth/auth.models';
 
 interface ResumeDto {
   id?: string;
@@ -17,13 +19,6 @@ interface ResumeDto {
   customizedExperiencesJson?: string;
   customizedEducationsJson?: string;
   customizedCertificationsJson?: string;
-}
-
-interface UserSession {
-  userId: string;
-  email: string;
-  candidateProfileId: string;
-  fullName: string;
 }
 
 export const dateRangeValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
@@ -55,6 +50,7 @@ export class App implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly authSession = inject(AuthSessionService);
 
   readonly apiUrl = 'https://localhost:7276/api';
 
@@ -166,6 +162,21 @@ export class App implements OnInit {
     });
   }
 
+  loginWithGoogle() {
+    this.http.get<{ url: string }>(`${this.apiUrl}/auth/login-google`).subscribe({
+      next: (res) => {
+        if (res?.url) {
+          window.location.assign(res.url);
+        } else {
+          window.location.assign(`${this.apiUrl}/auth/login-google-complete`);
+        }
+      },
+      error: () => {
+        window.location.assign(`${this.apiUrl}/auth/login-google-complete`);
+      }
+    });
+  }
+
   register() {
     if (this.registerForm.invalid) {
       this.showStatus('Por favor, preencha o formulário de cadastro corretamente.', false);
@@ -193,8 +204,7 @@ export class App implements OnInit {
   }
 
   logout() {
-    localStorage.removeItem('careeros_user_session');
-    localStorage.removeItem('careeros_profile_draft');
+    this.authSession.clearSession();
     this.currentUser = null;
     this.candidateId = null;
     this.profileForm.reset();
@@ -212,26 +222,21 @@ export class App implements OnInit {
   private setupUserSession(session: UserSession) {
     this.currentUser = session;
     this.candidateId = session.candidateProfileId;
-    localStorage.setItem('careeros_user_session', JSON.stringify(session));
+    this.authSession.setSession(session);
     this.loadProfileFromApi(session.candidateProfileId);
     this.loadResumes(session.candidateProfileId);
     this.cdr.detectChanges();
   }
 
   private loadUserSession() {
-    const cached = localStorage.getItem('careeros_user_session');
-    if (cached) {
-      try {
-        const session = JSON.parse(cached) as UserSession;
-        this.currentUser = session;
-        this.candidateId = session.candidateProfileId;
-        this.loadDraftOrNew();
-        this.loadProfileFromApi(session.candidateProfileId);
-        this.loadResumes(session.candidateProfileId);
-        this.cdr.detectChanges();
-      } catch (e) {
-        console.error('Falha ao restaurar sessão de usuário', e);
-      }
+    const session = this.authSession.getSession();
+    if (session) {
+      this.currentUser = session;
+      this.candidateId = session.candidateProfileId;
+      this.loadDraftOrNew();
+      this.loadProfileFromApi(session.candidateProfileId);
+      this.loadResumes(session.candidateProfileId);
+      this.cdr.detectChanges();
     }
   }
 
