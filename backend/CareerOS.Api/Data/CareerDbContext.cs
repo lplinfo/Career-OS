@@ -9,6 +9,7 @@ public class CareerDbContext(DbContextOptions<CareerDbContext> options) : DbCont
     public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
     public DbSet<Education> EducationHistory => Set<Education>();
     public DbSet<Certification> Certifications => Set<Certification>();
+    public DbSet<Resume> Resumes => Set<Resume>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
