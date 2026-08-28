@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CareerOS.Api.Migrations
 {
     [DbContext(typeof(CareerDbContext))]
-    [Migration("20260716195400_AddCandidateCollections")]
-    partial class AddCandidateCollections
+    [Migration("20260828155934_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -146,6 +146,62 @@ namespace CareerOS.Api.Migrations
                     b.HasIndex("CandidateProfileId");
 
                     b.ToTable("education_history", (string)null);
+                });
+
+            modelBuilder.Entity("CareerOS.Api.Domain.Resume", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CandidateProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CustomizedCertificationsJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomizedEducationsJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomizedExperiencesJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomizedSummary")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomizedTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<bool>("ShowEmail")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowLocation")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowPhone")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Skills")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TargetCountry")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("resumes", (string)null);
                 });
 
             modelBuilder.Entity("CareerOS.Api.Domain.WorkExperience", b =>

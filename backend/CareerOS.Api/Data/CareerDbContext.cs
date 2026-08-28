@@ -25,6 +25,7 @@ public class CareerDbContext(DbContextOptions<CareerDbContext> options) : DbCont
         modelBuilder.Entity<WorkExperience>().ToTable("work_experiences").Property(x => x.Company).HasMaxLength(200).IsRequired();
         modelBuilder.Entity<Education>().ToTable("education_history").Property(x => x.Institution).HasMaxLength(200).IsRequired();
         modelBuilder.Entity<Certification>().ToTable("certifications").Property(x => x.Name).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<Resume>().ToTable("resumes").Property(x => x.Language).HasMaxLength(10).IsRequired();
         modelBuilder.Entity<CandidateProfile>().HasMany(x => x.WorkExperiences).WithOne().HasForeignKey(x => x.CandidateProfileId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<CandidateProfile>().HasMany(x => x.EducationHistory).WithOne().HasForeignKey(x => x.CandidateProfileId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<CandidateProfile>().HasMany(x => x.Certifications).WithOne().HasForeignKey(x => x.CandidateProfileId).OnDelete(DeleteBehavior.Cascade);
