@@ -1,9 +1,10 @@
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using CareerOS.Api.Contracts;
 using CareerOS.Api.Data;
 using CareerOS.Api.Domain;
-using CareerOS.Api.Utils;
+using CareerOS.Api.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,85 +12,81 @@ namespace CareerOS.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(CareerDbContext context) : ControllerBase
+public class AuthController(
+    UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
+    CareerDbContext dbContext,
+    IJwtTokenService tokenService) : ControllerBase
 {
-    public class RegisterRequest
-    {
-        [Required, EmailAddress, MaxLength(320)]
-        public string Email { get; set; } = string.Empty;
-
-        [Required, MinLength(6), MaxLength(100)]
-        public string Password { get; set; } = string.Empty;
-
-        [Required, MaxLength(200)]
-        public string FullName { get; set; } = string.Empty;
-
-        [Required, MaxLength(160)]
-        public string ProfessionalTitle { get; set; } = string.Empty;
-    }
-
-    public class LoginRequest
-    {
-        [Required, EmailAddress]
-        public string Email { get; set; } = string.Empty;
-
-        [Required]
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class AuthResponse
-    {
-        public Guid UserId { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public Guid CandidateProfileId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-    }
-
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-
-        // Check if user already exists
-        var exists = await context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
-        if (exists)
+        var existingUser = await userManager.FindByEmailAsync(request.Email);
+        if (existingUser != null)
         {
-            return BadRequest(new { message = "Este e-mail já está cadastrado." });
+            return BadRequest(new { message = "User with this email already exists" });
         }
 
-        // Create initial candidate profile
-        var profile = new CandidateProfile
+        var executionStrategy = dbContext.Database.CreateExecutionStrategy();
+
+        return await executionStrategy.ExecuteAsync<IActionResult>(async () =>
         {
-            FullName = request.FullName,
-            Email = request.Email,
-            ProfessionalTitle = request.ProfessionalTitle,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
+            using var transaction = await dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var profile = new CandidateProfile
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = request.FullName,
+                    ProfessionalTitle = request.ProfessionalTitle,
+                    Email = request.Email,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                };
 
-        context.CandidateProfiles.Add(profile);
-        await context.SaveChangesAsync();
+                dbContext.CandidateProfiles.Add(profile);
+                await dbContext.SaveChangesAsync();
 
-        // Create corresponding user account
-        var user = new User
-        {
-            Email = request.Email,
-            PasswordHash = PasswordHasher.HashPassword(request.Password),
-            CandidateProfileId = profile.Id,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
+                var user = new ApplicationUser
+                {
+                    Id = Guid.NewGuid(),
+                    UserName = request.Email,
+                    Email = request.Email,
+                    CandidateProfileId = profile.Id,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
 
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
+                var createResult = await userManager.CreateAsync(user, request.Password);
+                if (!createResult.Succeeded)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest(createResult.Errors);
+                }
 
-        return Ok(new AuthResponse
-        {
-            UserId = user.Id,
-            Email = user.Email,
-            CandidateProfileId = user.CandidateProfileId,
-            FullName = profile.FullName
+                await transaction.CommitAsync();
+
+                var (token, expiresAt) = tokenService.GenerateAccessToken(user);
+
+                var response = new AuthResponse
+                {
+                    UserId = user.Id,
+                    Email = user.Email,
+                    CandidateProfileId = profile.Id,
+                    FullName = profile.FullName,
+                    AccessToken = token,
+                    TokenType = "Bearer",
+                    ExpiresAt = expiresAt
+                };
+
+                return CreatedAtAction(nameof(Me), response);
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         });
     }
 
@@ -99,23 +96,78 @@ public class AuthController(CareerDbContext context) : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
-        if (user == null || !PasswordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user == null)
         {
-            return Unauthorized(new { message = "E-mail ou senha incorretos." });
+            return Unauthorized(new { message = "Invalid email or password" });
         }
 
-        var profile = await context.CandidateProfiles.FindAsync(user.CandidateProfileId);
-        var fullName = profile?.FullName ?? "Candidato";
+        var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+        if (!result.Succeeded)
+        {
+            return Unauthorized(new { message = "Invalid email or password" });
+        }
 
-        return Ok(new AuthResponse
+        var profile = await dbContext.CandidateProfiles.FirstOrDefaultAsync(p => p.Id == user.CandidateProfileId);
+        var (token, expiresAt) = tokenService.GenerateAccessToken(user);
+
+        var response = new AuthResponse
         {
             UserId = user.Id,
-            Email = user.Email,
+            Email = user.Email ?? request.Email,
             CandidateProfileId = user.CandidateProfileId,
-            FullName = fullName
-        });
+            FullName = profile?.FullName ?? string.Empty,
+            AccessToken = token,
+            TokenType = "Bearer",
+            ExpiresAt = expiresAt
+        };
+
+        return Ok(response);
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> Me()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+
+        var profile = await dbContext.CandidateProfiles.FirstOrDefaultAsync(p => p.Id == user.CandidateProfileId);
+
+        string currentToken = string.Empty;
+        var authHeader = Request.Headers.Authorization.ToString();
+        if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            currentToken = authHeader.Substring("Bearer ".Length).Trim();
+        }
+
+        DateTimeOffset expiresAt = DateTimeOffset.UtcNow;
+        var expClaim = User.FindFirstValue("exp");
+        if (long.TryParse(expClaim, out var expUnix))
+        {
+            expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix);
+        }
+
+        var response = new AuthResponse
+        {
+            UserId = user.Id,
+            Email = user.Email ?? string.Empty,
+            CandidateProfileId = user.CandidateProfileId,
+            FullName = profile?.FullName ?? string.Empty,
+            AccessToken = currentToken,
+            TokenType = "Bearer",
+            ExpiresAt = expiresAt
+        };
+
+        return Ok(response);
     }
 }
