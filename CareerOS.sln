@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -7,7 +6,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{3431
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CareerOS.Api", "backend\CareerOS.Api\CareerOS.Api.csproj", "{03D21804-448D-4097-B8C6-0B96D651B49D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CareerOS.Api.Tests", "backend\CareerOS.Api.Tests\CareerOS.Api.Tests.csproj", "{649E93F4-63E3-441F-BCC4-5C446869D6ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CareerOS.Api.Tests", "backend\CareerOS.Api.Tests\CareerOS.Api.Tests.csproj", "{AD4A2695-E252-45DE-B624-0824FFDD1857}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,13 +21,13 @@ Global
 		{03D21804-448D-4097-B8C6-0B96D651B49D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03D21804-448D-4097-B8C6-0B96D651B49D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03D21804-448D-4097-B8C6-0B96D651B49D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{649E93F4-63E3-441F-BCC4-5C446869D6ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{649E93F4-63E3-441F-BCC4-5C446869D6ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{649E93F4-63E3-441F-BCC4-5C446869D6ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{649E93F4-63E3-441F-BCC4-5C446869D6ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD4A2695-E252-45DE-B624-0824FFDD1857}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD4A2695-E252-45DE-B624-0824FFDD1857}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD4A2695-E252-45DE-B624-0824FFDD1857}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD4A2695-E252-45DE-B624-0824FFDD1857}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{03D21804-448D-4097-B8C6-0B96D651B49D} = {3431BE3D-B108-432D-AF6C-1F3841C12341}
-		{649E93F4-63E3-441F-BCC4-5C446869D6ED} = {3431BE3D-B108-432D-AF6C-1F3841C12341}
+		{AD4A2695-E252-45DE-B624-0824FFDD1857} = {3431BE3D-B108-432D-AF6C-1F3841C12341}
 	EndGlobalSection
 EndGlobal

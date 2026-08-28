@@ -38,6 +38,12 @@ export const dateRangeValidator: ValidatorFn = (control: AbstractControl): Valid
   return null;
 };
 
+export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const password = control.get('password')?.value;
+  const confirm = control.get('confirmPassword')?.value;
+  return password === confirm ? null : { passwordMismatch: true };
+};
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -50,7 +56,7 @@ export class App implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  readonly apiUrl = 'http://localhost:5062/api';
+  readonly apiUrl = 'https://localhost:7276/api';
 
   // Auth State
   currentUser: UserSession | null = null;
@@ -97,14 +103,8 @@ export class App implements OnInit {
       confirmPassword: ['', [Validators.required]],
       fullName: ['', [Validators.required, Validators.maxLength(200)]],
       professionalTitle: ['', [Validators.required, Validators.maxLength(160)]]
-    }, { validators: this.passwordMatchValidator });
+    }, { validators: passwordMatchValidator });
   }
-
-  private passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
-    const password = control.get('password')?.value;
-    const confirm = control.get('confirmPassword')?.value;
-    return password === confirm ? null : { passwordMismatch: true };
-  };
 
   private initForm() {
     this.profileForm = this.fb.group({
@@ -379,15 +379,37 @@ export class App implements OnInit {
     this.educationsArray.clear();
     this.certificationsArray.clear();
 
-    if (data.experiences) {
-      data.experiences.forEach((exp: any) => this.addExperience(exp));
-    }
-    if (data.educations) {
-      data.educations.forEach((edu: any) => this.addEducation(edu));
-    }
-    if (data.certifications) {
-      data.certifications.forEach((cert: any) => this.addCertification(cert));
-    }
+    const experiences = data.experiences ?? data.workExperiences ?? [];
+    experiences.forEach((exp: any) => this.addExperience({
+      id: exp.id,
+      companyName: exp.company || exp.companyName,
+      jobTitle: exp.role || exp.jobTitle,
+      description: exp.description,
+      startDate: exp.startDate,
+      endDate: exp.endDate,
+      isCurrent: exp.isCurrent,
+      order: exp.displayOrder ?? exp.order
+    }));
+    const educations = data.educations ?? data.educationHistory ?? [];
+    educations.forEach((edu: any) => this.addEducation({
+      id: edu.id,
+      institution: edu.institution,
+      degree: edu.degree,
+      fieldOfStudy: edu.course || edu.fieldOfStudy,
+      startDate: edu.startDate,
+      endDate: edu.completionDate || edu.endDate,
+      isCurrent: edu.isCurrent,
+      order: edu.displayOrder ?? edu.order
+    }));
+    const certifications = data.certifications ?? [];
+    certifications.forEach((cert: any) => this.addCertification({
+      id: cert.id,
+      name: cert.name,
+      issuingOrganization: cert.issuer || cert.issuingOrganization,
+      issueDate: cert.issuedAt || cert.issueDate,
+      credentialUrl: cert.credentialUrl,
+      order: cert.displayOrder ?? cert.order
+    }));
 
     this.profileForm.patchValue({
       fullName: data.fullName || '',
@@ -424,7 +446,43 @@ export class App implements OnInit {
       return;
     }
 
-    const payload = this.profileForm.value;
+    const v = this.profileForm.value;
+    const payload = {
+      fullName: v.fullName,
+      preferredName: v.preferredName,
+      professionalTitle: v.professionalTitle,
+      professionalSummary: v.professionalSummary,
+      email: v.email,
+      phone: v.phone,
+      city: v.city,
+      region: v.region,
+      country: v.country,
+      openToRemoteWork: !!v.openToRemoteWork,
+      openToRelocation: !!v.openToRelocation,
+      workExperiences: (v.experiences ?? []).map((x: any) => ({
+        company: x.companyName,
+        role: x.jobTitle,
+        startDate: x.startDate || null,
+        endDate: x.isCurrent ? null : (x.endDate || null),
+        isCurrent: !!x.isCurrent,
+        description: x.description,
+        displayOrder: x.order
+      })),
+      educationHistory: (v.educations ?? []).map((x: any) => ({
+        institution: x.institution,
+        course: x.fieldOfStudy,
+        degree: x.degree,
+        completionDate: x.isCurrent ? null : (x.endDate || null),
+        displayOrder: x.order
+      })),
+      certifications: (v.certifications ?? []).map((x: any) => ({
+        name: x.name,
+        issuer: x.issuingOrganization,
+        issuedAt: x.issueDate || null,
+        credentialUrl: x.credentialUrl,
+        displayOrder: x.order
+      }))
+    };
     const request = this.candidateId
       ? this.http.put<any>(`${this.apiUrl}/candidate-profiles/${this.candidateId}`, payload)
       : this.http.post<any>(`${this.apiUrl}/candidate-profiles`, payload);

@@ -87,30 +87,22 @@ namespace CareerOS.Api.Migrations
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CredentialId")
-                        .HasColumnType("text");
-
                     b.Property<string>("CredentialUrl")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("ExpirationDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
 
-                    b.Property<DateTime?>("IssueDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("IssuedAt")
+                        .HasColumnType("date");
 
-                    b.Property<string>("IssuingOrganization")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<string>("Issuer")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -128,38 +120,29 @@ namespace CareerOS.Api.Migrations
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateOnly?>("CompletionDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Course")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Degree")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FieldOfStudy")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Institution")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("IsCurrent")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("educations", (string)null);
+                    b.ToTable("education_history", (string)null);
                 });
 
             modelBuilder.Entity("CareerOS.Api.Domain.Resume", b =>
@@ -182,13 +165,11 @@ namespace CareerOS.Api.Migrations
 
                     b.Property<string>("CustomizedSummary")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("text");
 
                     b.Property<string>("CustomizedTitle")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -210,15 +191,12 @@ namespace CareerOS.Api.Migrations
 
                     b.Property<string>("TargetCountry")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CandidateProfileId");
 
                     b.ToTable("resumes", (string)null);
                 });
@@ -262,31 +240,29 @@ namespace CareerOS.Api.Migrations
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CompanyName")
+                    b.Property<string>("Company")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("text");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IsCurrent")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("JobTitle")
+                    b.Property<string>("Role")
                         .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)");
+                        .HasColumnType("text");
 
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 
@@ -307,16 +283,7 @@ namespace CareerOS.Api.Migrations
             modelBuilder.Entity("CareerOS.Api.Domain.Education", b =>
                 {
                     b.HasOne("CareerOS.Api.Domain.CandidateProfile", null)
-                        .WithMany("Educations")
-                        .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("CareerOS.Api.Domain.Resume", b =>
-                {
-                    b.HasOne("CareerOS.Api.Domain.CandidateProfile", null)
-                        .WithMany("Resumes")
+                        .WithMany("EducationHistory")
                         .HasForeignKey("CandidateProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -325,7 +292,7 @@ namespace CareerOS.Api.Migrations
             modelBuilder.Entity("CareerOS.Api.Domain.WorkExperience", b =>
                 {
                     b.HasOne("CareerOS.Api.Domain.CandidateProfile", null)
-                        .WithMany("Experiences")
+                        .WithMany("WorkExperiences")
                         .HasForeignKey("CandidateProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -335,11 +302,9 @@ namespace CareerOS.Api.Migrations
                 {
                     b.Navigation("Certifications");
 
-                    b.Navigation("Educations");
+                    b.Navigation("EducationHistory");
 
-                    b.Navigation("Experiences");
-
-                    b.Navigation("Resumes");
+                    b.Navigation("WorkExperiences");
                 });
 #pragma warning restore 612, 618
         }

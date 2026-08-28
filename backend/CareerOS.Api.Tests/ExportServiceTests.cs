@@ -19,15 +19,15 @@ public class ExportServiceTests
         {
             new WorkExperience
             {
-                JobTitle = "Customized Engineering Lead",
-                CompanyName = "Tailored Labs",
+                Role = "Customized Engineering Lead",
+                Company = "Tailored Labs",
                 Description = "Led a customized platform migration.",
-                StartDate = new DateTime(2023, 1, 1),
+                StartDate = new DateOnly(2023, 1, 1),
                 IsCurrent = true,
-                Order = 1
+                DisplayOrder = 1
             }
         });
-        resume.CustomizedEducationsJson = JsonSerializer.Serialize(profile.Educations);
+        resume.CustomizedEducationsJson = JsonSerializer.Serialize(profile.EducationHistory);
         resume.CustomizedCertificationsJson = JsonSerializer.Serialize(profile.Certifications);
 
         var result = ExportService.GenerateAtsText(resume, profile);
@@ -50,6 +50,7 @@ public class ExportServiceTests
         Assert.Contains("EXPERIÊNCIA PROFISSIONAL", result);
         Assert.Contains("Profile Software Engineer", result);
         Assert.Contains("University of Sao Paulo", result);
+        Assert.Contains("Bachelor of Science em Computer Science", result);
         Assert.Contains("AWS Certified Developer", result);
     }
 
@@ -121,37 +122,36 @@ public class ExportServiceTests
         City = "Sao Paulo",
         Region = "SP",
         Country = "Brazil",
-        Experiences =
+        WorkExperiences =
         [
             new WorkExperience
             {
-                JobTitle = "Profile Software Engineer",
-                CompanyName = "CareerOS",
+                Role = "Profile Software Engineer",
+                Company = "CareerOS",
                 Description = "Built APIs and cloud-native services.",
-                StartDate = new DateTime(2021, 2, 1),
-                EndDate = new DateTime(2022, 12, 1),
-                Order = 2
+                StartDate = new DateOnly(2021, 2, 1),
+                EndDate = new DateOnly(2022, 12, 1),
+                DisplayOrder = 2
             },
             new WorkExperience
             {
-                JobTitle = "Junior Developer",
-                CompanyName = "Initial Tech",
+                Role = "Junior Developer",
+                Company = "Initial Tech",
                 Description = "Delivered internal business applications.",
-                StartDate = new DateTime(2019, 1, 1),
-                EndDate = new DateTime(2021, 1, 1),
-                Order = 1
+                StartDate = new DateOnly(2019, 1, 1),
+                EndDate = new DateOnly(2021, 1, 1),
+                DisplayOrder = 1
             }
         ],
-        Educations =
+        EducationHistory =
         [
             new Education
             {
                 Degree = "Bachelor of Science",
-                FieldOfStudy = "Computer Science",
+                Course = "Computer Science",
                 Institution = "University of Sao Paulo",
-                StartDate = new DateTime(2015, 2, 1),
-                EndDate = new DateTime(2018, 12, 1),
-                Order = 1
+                CompletionDate = new DateOnly(2018, 12, 1),
+                DisplayOrder = 1
             }
         ],
         Certifications =
@@ -159,10 +159,10 @@ public class ExportServiceTests
             new Certification
             {
                 Name = "AWS Certified Developer",
-                IssuingOrganization = "Amazon Web Services",
-                IssueDate = new DateTime(2024, 4, 1),
-                CredentialId = "AWS-12345",
-                Order = 1
+                Issuer = "Amazon Web Services",
+                IssuedAt = new DateOnly(2024, 4, 1),
+                CredentialUrl = "https://aws.amazon.com/verification/AWS-12345",
+                DisplayOrder = 1
             }
         ]
     };
