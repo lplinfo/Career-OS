@@ -97,10 +97,47 @@ Refatorar `Controllers/AuthController.cs` para `UserManager<ApplicationUser>`/`S
 
 ---
 
-## ONDA 2 (resumo para contexto — NÃO executar agora)
+## ONDA 2 — Instruções operacionais (execução em 2 sessões paralelas)
 
-- **Agente A (backend)**: `JwtTokenService` definitivo + `ICurrentUser`/`ClaimsPrincipalExtensions`; `[Authorize]` nos dois controllers e filtros de dono; remoção de `POST` livre de perfis e de `candidateProfileId` confiável do corpo; migration `AddIdentityCoreToUsers` (rename `PasswordHash→LegacyPasswordHash`, novas colunas/tabelas `user_claims|user_logins|user_tokens`, índices normalizados, FK `users.CandidateProfileId→candidate_profiles` com `Restrict`); lazy-migração SHA-256 legada; testes (JwtTokenService, authorization, migration).
-- **Agente B (Google + frontend)**: endpoints `POST /auth/exchange-google`, `GET /auth/login-google`, `GET /auth/login-google-complete`; `Services/GoogleLoginExchangeService` (código de troca 60s, uso único); frontend `auth/auth-session.service.ts`, `auth/auth.interceptor.ts`, `auth/google-callback.component.ts`, rota `auth/callback`, botão "Entrar com Google", tratamento 401/403; testes.
+Partir da branch `main` atual (contém a Onda 1: `ApplicationUser`, `IdentityUserContext`, JWT, `AuthController` com register/login/me). Dois PRs independentes:
+**PR-008 = Agente A (backend)**, **PR-009 = Agente B (Google + frontend)**.
+
+### Divisão de arquivos (NÃO violar)
+
+| Área | Agente A (PR-008) PODE TOCAR | Agente B (PR-009) PODE TOCAR |
+|---|---|---|
+| `Program.cs` | Sim | **Não** |
+| `Services/IJwtTokenService.cs`, `Services/JwtTokenService.cs` | Sim | Não |
+| `Services/ICurrentUser.cs`, `Services/ClaimsPrincipalExtensions.cs` (novos) | Sim | Não |
+| `Controllers/CandidateProfilesController.cs`, `Controllers/ResumesController.cs` | Sim | Não |
+| `Services/GoogleLoginExchangeService.cs` (novo) | Não | Sim |
+| `Controllers/AuthController.cs` | **Somente** dentro do método `Login` (fallback lazy SHA-256) | Sim (adicionar endpoints google) |
+| `Migrations/*` (gerar `AddIdentityCoreToUsers`) | Sim | **Não** (nunca rodar `dotnet ef`) |
+| `Utils/PasswordHasher.cs` | Somente leitura/reuso | Não |
+| `frontend/**` (app.ts, app.html, app.routes.ts, app.config.ts, auth/*, especs) | **Não** | Sim |
+| `CareerOS.Api.Tests/*` (backend) | Sim | Não |
+| `frontend/*.spec.ts` | Não | Sim |
+
+Regras p/ os agentes:
+- **Proibido** editar arquivos fora da sua coluna. Em `AuthController.cs`, A altera apenas o corpo do `Login`; B apenas adiciona novos métodos.
+- **Proibido** alterar migrations existentes (`InitialCreate`, `AddUsers`) nem a `Program.cs` p/ B.
+- Não inserir credenciais reais: Google ClientId/ClientSecret via config local não versionada (placeholders).
+- Commits `PR-008: <tipo>: <desc>` (A) / `PR-009: <tipo>: <desc>` (B).
+
+### Agente A — backend (PR-008)
+1. `JwtTokenService` definitivo (claims stantardizados `sub`/`email`/`candidate_profile_id`, validação) + `ICurrentUser` (`Services/ICurrentUser.cs`) + `ClaimsPrincipalExtensions`.
+2. `[Authorize]` e filtros de dono em `CandidateProfilesController` e `ResumesController` (usar `ICurrentUser`; mappings por `CandidateProfileId`); remover criação pública de perfil sem dono (`POST` exige pertencimento) e vetar `candidateProfileId` arbitrário no corpo do `POST /api/resumes`.
+3. Gerar migration `AddIdentityCoreToUsers`: renomear `PasswordHash→LegacyPasswordHash`, adicionar colunas Identity em `users` (`SecurityStamp`,`EmailConfirmed`, `NormalizedUserName`/`NormalizedEmail` índices `UserNameIndex`/`EmailIndex`, `PhoneNumber*`, `Lockout*`, `AccessFailedCount`, `TwoFactorEnabled`, `ConcurrencyStamp`), criar `user_claims`/`user_logins`/`user_tokens`, FK `users.CandidateProfileId→candidate_profiles` (`Restrict`). Rodar `dotnet ef migrations add AddIdentityCoreToUsers` a partir de `backend/CareerOS.Api`.
+4. Lazy-migração SHA-256: no `Login`, se `CheckPasswordSignInAsync` falhar e `LegacyPasswordHash` preenchido e `PasswordHasher.Verify` ok → migrar o hash (rehash com Identity), persistir e logar sem expirar.
+5. Testes backend (JwtTokenService, ICurrentUser, autorização/filtros de dono, migration) e build `dotnet build/test CareerOS.sln` verde.
+
+### Agente B — Google + frontend (PR-009)
+1. Backend: `POST /api/auth/exchange-google` (troca `code` Google → `AuthResponse` JWT), `GET /api/auth/login-google` (URL de autorização), `GET /api/auth/login-google-complete` (callback, usa `GoogleLoginExchangeService` com código de uso único 60s). Sem criar usuário novo? Seguir seção Google do `docs/PLANO-AUTENTICACAO.md`; ClientId/Secret via config não versionada. Não rodar `dotnet ef`.
+2. Frontend: `auth/auth-session.service.ts`, `auth/auth.interceptor.ts` (Bearer + 401/403), `auth/google-callback.component.ts`, rota `auth/callback` em `app.routes.ts`, botão "Entrar com Google" em `app.html`/`app.ts`, usar `accessToken` na sessão. Manter register/login local funcionando.
+3. Testes: `npm test` no `frontend/` verde + testes dos componentes novos.
+
+### Entrega da Onda 2
+Cada sessão entrega diff/PR. Integração (fora do escopo dos agentes): aplicar em branches `feat/PR-008-*` e `feat/PR-009-*`, resolver possível conflito em `AuthController.cs`, rodar `dotnet build/test` + `npm test`, `codex review` de ambos, merge na `main`. Próximo número após merge: PR-010.
 
 ## ONDA 3 (resumo — NÃO executar agora)
 
