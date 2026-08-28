@@ -1,5 +1,13 @@
+using System.Security.Claims;
+using System.Text;
 using CareerOS.Api.Data;
+using CareerOS.Api.Domain;
+using CareerOS.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,12 +15,90 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Configure JwtOptions
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey) || Encoding.UTF8.GetBytes(jwtOptions.SecretKey).Length < 32)
+{
+    throw new InvalidOperationException("JWT SecretKey must be configured and at least 256 bits (32 bytes) long.");
+}
+
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+// Configure DbContext
 builder.Services.AddDbContext<CareerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CareerDatabase")));
+
+// Configure Identity Core
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+{
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+.AddEntityFrameworkStores<CareerDbContext>()
+.AddSignInManager()
+.AddDefaultTokenProviders();
+
+// Configure Authentication & JwtBearer
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = jwtOptions.Issuer,
+        ValidateAudience = true,
+        ValidAudience = jwtOptions.Audience,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(5),
+        NameClaimType = ClaimTypes.Email
+    };
+});
+
+// Configure Cors
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy => policy
     .WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+// Configure Swagger with Bearer authorization
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT Bearer token"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -26,6 +112,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("frontend");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
