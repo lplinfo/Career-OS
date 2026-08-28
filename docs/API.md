@@ -76,7 +76,7 @@ Retorna a sessão do usuário autenticado.
 - `200 OK` — `AuthResponse` do usuário atual.
 - `401 Unauthorized` — token ausente, inválido ou expirado.
 
-### `POST /api/auth/login-google`
+### `GET /api/auth/login-google`
 
 Inicia o fluxo de login social com Google. Redireciona o navegador para a URL de autorização do Google (0Auth) com `state` de proteção CSRF.
 

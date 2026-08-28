@@ -16,7 +16,7 @@ public class JwtTokenService(IOptions<JwtOptions> options) : IJwtTokenService
         var secretKey = _options.SecretKey;
         if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetBytes(secretKey).Length < 32)
         {
-            secretKey = "CareerOS_Development_Default_Secret_Key_At_Least_32_Bytes!";
+            throw new InvalidOperationException("JWT SecretKey must be configured and at least 256 bits (32 bytes) long.");
         }
 
         var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.AccessTokenMinutes);
