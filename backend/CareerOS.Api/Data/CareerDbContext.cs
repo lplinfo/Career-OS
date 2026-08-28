@@ -1,25 +1,46 @@
 using CareerOS.Api.Domain;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace CareerOS.Api.Data;
 
-public class CareerDbContext(DbContextOptions<CareerDbContext> options) : DbContext(options)
+public class CareerDbContext(DbContextOptions<CareerDbContext> options)
+    : IdentityUserContext<ApplicationUser, Guid>(options)
 {
     public DbSet<CandidateProfile> CandidateProfiles => Set<CandidateProfile>();
     public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
     public DbSet<Education> EducationHistory => Set<Education>();
     public DbSet<Certification> Certifications => Set<Certification>();
     public DbSet<Resume> Resumes => Set<Resume>();
-    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var user = modelBuilder.Entity<User>();
-        user.ToTable("users");
-        user.HasKey(x => x.Id);
-        user.Property(x => x.Email).HasMaxLength(320).IsRequired();
-        user.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
-        user.HasIndex(x => x.Email).IsUnique();
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ApplicationUser>(b =>
+        {
+            b.ToTable("users");
+            b.Property(u => u.Email).HasMaxLength(320);
+            b.Property(u => u.UserName).HasMaxLength(320);
+            b.Property(u => u.NormalizedEmail).HasMaxLength(320);
+            b.HasIndex(u => u.NormalizedUserName).HasDatabaseName("UserNameIndex").IsUnique();
+        });
+
+        modelBuilder.Entity<IdentityUserClaim<Guid>>(b =>
+        {
+            b.ToTable("user_claims");
+        });
+
+        modelBuilder.Entity<IdentityUserLogin<Guid>>(b =>
+        {
+            b.ToTable("user_logins");
+        });
+
+        modelBuilder.Entity<IdentityUserToken<Guid>>(b =>
+        {
+            b.ToTable("user_tokens");
+        });
 
         var profile = modelBuilder.Entity<CandidateProfile>();
         profile.ToTable("candidate_profiles");
