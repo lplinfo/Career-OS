@@ -1,6 +1,29 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CandidateProfileService } from './candidate-profile.service';
+
+export const dateRangeValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const startDate = control.get('startDate')?.value;
+  const endDate = control.get('endDate')?.value;
+  const isCurrent = control.get('isCurrent')?.value;
+
+  if (isCurrent) {
+    return null;
+  }
+  if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    return { dateRangeInvalid: true };
+  }
+  return null;
+};
+
+export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const password = control.get('password')?.value;
+  const confirmPassword = control.get('confirmPassword')?.value;
+  if (password && confirmPassword && password !== confirmPassword) {
+    return { passwordMismatch: true };
+  }
+  return null;
+};
 
 @Component({
   selector: 'app-root',
@@ -37,14 +60,14 @@ export class App implements OnInit {
     this.form.valueChanges.subscribe(() => this.saveDraft());
   }
 
-  protected next(): void { if (this.step() < this.steps.length - 1) this.step.update(value => value + 1); }
-  protected previous(): void { if (this.step() > 0) this.step.update(value => value - 1); }
-  protected saveDraft(): void {
+  public next(): void { if (this.step() < this.steps.length - 1) this.step.update(value => value + 1); }
+  public previous(): void { if (this.step() > 0) this.step.update(value => value - 1); }
+  public saveDraft(): void {
     localStorage.setItem('careeros-candidate-draft', JSON.stringify(this.form.getRawValue()));
     this.savedAt.set(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
   }
 
-  protected saveProfile(): void {
+  public saveProfile(): void {
     if (this.form.invalid) { this.step.set(0); this.form.markAllAsTouched(); return; }
     const value = this.form.getRawValue();
     const profileId = localStorage.getItem('careeros-profile-id');
@@ -59,5 +82,55 @@ export class App implements OnInit {
       next: (response: any) => { if (response?.id) localStorage.setItem('careeros-profile-id', response.id); this.saving.set(false); this.saveMessage.set('Perfil salvo na API.'); },
       error: () => { this.saving.set(false); this.saveMessage.set('Não foi possível salvar. Confirme se a API está em execução.'); }
     });
+  }
+
+  public initAuthForms() {
+    return {
+      loginForm: this.fb.group({
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required]]
+      }),
+      registerForm: this.fb.group({
+        fullName: ['', Validators.required],
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', Validators.required]
+      }, { validators: [passwordMatchValidator] })
+    };
+  }
+
+  public initCreateResume() {
+    return {
+      title: 'Curriculum Vitae',
+      template: 'modern',
+      experiences: [] as any[],
+      educations: [] as any[],
+      certifications: [] as any[]
+    };
+  }
+
+  public addExperience(list: any[], exp: any) {
+    list.push(exp);
+  }
+
+  public addEducation(list: any[], edu: any) {
+    list.push(edu);
+  }
+
+  public addCertification(list: any[], cert: any) {
+    list.push(cert);
+  }
+
+  public reorderSwap(list: any[], indexA: number, indexB: number) {
+    if (indexA >= 0 && indexB >= 0 && indexA < list.length && indexB < list.length) {
+      const temp = list[indexA];
+      list[indexA] = list[indexB];
+      list[indexB] = temp;
+    }
+  }
+
+  public logout() {
+    localStorage.removeItem('careeros_user_session');
+    localStorage.removeItem('careeros_profile_draft');
   }
 }
