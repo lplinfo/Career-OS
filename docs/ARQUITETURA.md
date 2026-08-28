@@ -9,7 +9,7 @@ CareerOS é uma aplicação **front-end + back-end**:
 - **Backend**: API REST em ASP.NET Core 9 (`backend/CareerOS.Api`), usando Entity Framework Core com PostgreSQL.
 - **Frontend**: aplicação Angular 21 standalone (`frontend/`), um componente monolítico `App` que concentra toda a lógica de UI, formulários e chamadas HTTP.
 
-O frontend conversa com a API via `HttpClient` em `http://localhost:5062/api`, habilitado pelo CORS configurado em `Program.cs` para `http://localhost:4200`.
+O frontend conversa com a API via `HttpClient` em `https://localhost:7276/api`, habilitado pelo CORS configurado em `Program.cs` para `http://localhost:4200`.
 
 ## Estrutura do backend
 
@@ -68,9 +68,11 @@ O `ExportService` possui um `GetLocalization` que retorna cabeçalhos de seção
 
 ## Autenticação
 
-- O `AuthController` `register` normaliza o e-mail, cria um `CandidateProfile` inicial e um `User` com `PasswordHasher.HashPassword`.
-- O `login` valida credenciais via `PasswordHasher.VerifyPassword` e retorna um `AuthResponse` com `UserId`, `CandidateProfileId` e `FullName`.
-- O frontend guarda a sessão em `localStorage` (`careeros_user_session`) — **não há uso de JWT/tokens** no momento; o estado de autenticação é controlado apenas pela sessão armazenada no navegador.
+- O `AuthController` `register` normaliza o e-mail, cria um `CandidateProfile` inicial, cria o `ApplicationUser` e retorna um `AuthResponse` com `AccessToken`.
+- O `login` valida credenciais e também retorna um `AuthResponse` com `UserId`, `CandidateProfileId`, `FullName`, `AccessToken`, `TokenType` e `ExpiresAt`.
+- O backend exige `JwtOptions:SecretKey` com pelo menos 32 bytes e valida `Issuer`/`Audience` no `JwtBearer`.
+- O fluxo social expõe `GET /api/auth/login-google`, `GET /api/auth/login-google-complete`, `POST /api/auth/exchange-google` e `GET /api/auth/me`.
+- O frontend mantém a sessão do usuário e usa o JWT retornado para chamadas autenticadas.
 
 ## Frontend
 
