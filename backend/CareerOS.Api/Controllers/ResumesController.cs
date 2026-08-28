@@ -64,8 +64,8 @@ public class ResumesController(CareerDbContext db) : ControllerBase
         if (resume is null) return NotFound();
 
         var profile = await db.CandidateProfiles
-            .Include(x => x.Experiences)
-            .Include(x => x.Educations)
+            .Include(x => x.WorkExperiences)
+            .Include(x => x.EducationHistory)
             .Include(x => x.Certifications)
             .FirstOrDefaultAsync(x => x.Id == resume.CandidateProfileId);
 
@@ -82,8 +82,8 @@ public class ResumesController(CareerDbContext db) : ControllerBase
         if (resume is null) return NotFound();
 
         var profile = await db.CandidateProfiles
-            .Include(x => x.Experiences)
-            .Include(x => x.Educations)
+            .Include(x => x.WorkExperiences)
+            .Include(x => x.EducationHistory)
             .Include(x => x.Certifications)
             .FirstOrDefaultAsync(x => x.Id == resume.CandidateProfileId);
 
@@ -100,8 +100,8 @@ public class ResumesController(CareerDbContext db) : ControllerBase
         if (resume is null) return NotFound();
 
         var profile = await db.CandidateProfiles
-            .Include(x => x.Experiences)
-            .Include(x => x.Educations)
+            .Include(x => x.WorkExperiences)
+            .Include(x => x.EducationHistory)
             .Include(x => x.Certifications)
             .FirstOrDefaultAsync(x => x.Id == resume.CandidateProfileId);
 

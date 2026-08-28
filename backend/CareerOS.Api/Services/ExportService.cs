@@ -79,10 +79,10 @@ public static class ExportService
             }
             else
             {
-                experiences = profile.Experiences;
+                experiences = profile.WorkExperiences;
             }
         }
-        catch { experiences = profile.Experiences; }
+        catch { experiences = profile.WorkExperiences; }
 
         try
         {
@@ -92,10 +92,10 @@ public static class ExportService
             }
             else
             {
-                educations = profile.Educations;
+                educations = profile.EducationHistory;
             }
         }
-        catch { educations = profile.Educations; }
+        catch { educations = profile.EducationHistory; }
 
         try
         {
@@ -111,9 +111,9 @@ public static class ExportService
         catch { certifications = profile.Certifications; }
 
         return (
-            experiences.OrderBy(x => x.Order).ToList(),
-            educations.OrderBy(x => x.Order).ToList(),
-            certifications.OrderBy(x => x.Order).ToList()
+            experiences.OrderBy(x => x.DisplayOrder).ToList(),
+            educations.OrderBy(x => x.DisplayOrder).ToList(),
+            certifications.OrderBy(x => x.DisplayOrder).ToList()
         );
     }
 
@@ -172,9 +172,9 @@ public static class ExportService
             sb.AppendLine(new string('-', loc.Experience.Length));
             foreach (var exp in experiences)
             {
-                var startStr = exp.StartDate.ToString("MM/yyyy");
+                var startStr = exp.StartDate?.ToString("MM/yyyy");
                 var endStr = exp.IsCurrent ? loc.Present : (exp.EndDate?.ToString("MM/yyyy") ?? loc.Present);
-                sb.AppendLine($"- {exp.JobTitle} | {exp.CompanyName} ({startStr} - {endStr})");
+                sb.AppendLine($"- {exp.Role} | {exp.Company} ({startStr} - {endStr})");
                 if (!string.IsNullOrEmpty(exp.Description))
                 {
                     sb.AppendLine($"  {exp.Description}");
@@ -189,10 +189,10 @@ public static class ExportService
             sb.AppendLine(new string('-', loc.Education.Length));
             foreach (var edu in educations)
             {
-                var startStr = edu.StartDate.ToString("MM/yyyy");
-                var endStr = edu.IsCurrent ? loc.Present : (edu.EndDate?.ToString("MM/yyyy") ?? loc.Present);
-                sb.AppendLine($"- {edu.Degree} em {edu.FieldOfStudy}");
-                sb.AppendLine($"  {edu.Institution} ({startStr} - {endStr})");
+                var completionStr = edu.CompletionDate?.ToString("MM/yyyy") ?? "";
+                var completionPart = string.IsNullOrEmpty(completionStr) ? "" : $" ({completionStr})";
+                sb.AppendLine($"- {edu.Degree} em {edu.Course}");
+                sb.AppendLine($"  {edu.Institution}{completionPart}");
                 sb.AppendLine();
             }
         }
@@ -203,12 +203,12 @@ public static class ExportService
             sb.AppendLine(new string('-', loc.Certifications.Length));
             foreach (var cert in certifications)
             {
-                var dateStr = cert.IssueDate?.ToString("MM/yyyy") ?? "";
+                var dateStr = cert.IssuedAt?.ToString("MM/yyyy") ?? "";
                 var datePart = string.IsNullOrEmpty(dateStr) ? "" : $" ({dateStr})";
-                sb.AppendLine($"- {cert.Name} | {cert.IssuingOrganization}{datePart}");
-                if (!string.IsNullOrEmpty(cert.CredentialId))
+                sb.AppendLine($"- {cert.Name} | {cert.Issuer}{datePart}");
+                if (!string.IsNullOrEmpty(cert.CredentialUrl))
                 {
-                    sb.AppendLine($"  ID: {cert.CredentialId}");
+                    sb.AppendLine($"  ID: {cert.CredentialUrl}");
                 }
                 sb.AppendLine();
             }
@@ -280,9 +280,9 @@ public static class ExportService
                 body.Append(CreateHeading(loc.Experience));
                 foreach (var exp in experiences)
                 {
-                    var startStr = exp.StartDate.ToString("MM/yyyy");
+                    var startStr = exp.StartDate?.ToString("MM/yyyy");
                     var endStr = exp.IsCurrent ? loc.Present : (exp.EndDate?.ToString("MM/yyyy") ?? loc.Present);
-                    var headerPara = new Paragraph(new Run(new Text($"{exp.JobTitle} - {exp.CompanyName} ({startStr} - {endStr})"))
+                    var headerPara = new Paragraph(new Run(new Text($"{exp.Role} - {exp.Company} ({startStr} - {endStr})"))
                     {
                         RunProperties = new RunProperties(new Bold(), new FontSize { Val = "22" }) // 11pt bold
                     });
@@ -302,14 +302,14 @@ public static class ExportService
                 body.Append(CreateHeading(loc.Education));
                 foreach (var edu in educations)
                 {
-                    var startStr = edu.StartDate.ToString("MM/yyyy");
-                    var endStr = edu.IsCurrent ? loc.Present : (edu.EndDate?.ToString("MM/yyyy") ?? loc.Present);
-                    var eduPara = new Paragraph(new Run(new Text($"{edu.Degree} em {edu.FieldOfStudy}"))
+                    var completionStr = edu.CompletionDate?.ToString("MM/yyyy") ?? "";
+                    var completionPart = string.IsNullOrEmpty(completionStr) ? "" : $" ({completionStr})";
+                    var eduPara = new Paragraph(new Run(new Text($"{edu.Degree} em {edu.Course}"))
                     {
                         RunProperties = new RunProperties(new Bold(), new FontSize { Val = "22" }) // 11pt bold
                     });
                     body.Append(eduPara);
-                    body.Append(CreateParagraph($"{edu.Institution} ({startStr} - {endStr})"));
+                    body.Append(CreateParagraph($"{edu.Institution}{completionPart}"));
                     body.Append(new Paragraph(new Run(new Text("")))); // Spacing
                 }
             }
@@ -320,16 +320,16 @@ public static class ExportService
                 body.Append(CreateHeading(loc.Certifications));
                 foreach (var cert in certifications)
                 {
-                    var dateStr = cert.IssueDate?.ToString("MM/yyyy") ?? "";
+                    var dateStr = cert.IssuedAt?.ToString("MM/yyyy") ?? "";
                     var datePart = string.IsNullOrEmpty(dateStr) ? "" : $" ({dateStr})";
-                    var certPara = new Paragraph(new Run(new Text($"{cert.Name} - {cert.IssuingOrganization}{datePart}"))
+                    var certPara = new Paragraph(new Run(new Text($"{cert.Name} - {cert.Issuer}{datePart}"))
                     {
                         RunProperties = new RunProperties(new FontSize { Val = "22" }) // 11pt
                     });
                     body.Append(certPara);
-                    if (!string.IsNullOrEmpty(cert.CredentialId))
+                    if (!string.IsNullOrEmpty(cert.CredentialUrl))
                     {
-                        body.Append(CreateParagraph($"ID: {cert.CredentialId}"));
+                        body.Append(CreateParagraph($"ID: {cert.CredentialUrl}"));
                     }
                 }
             }
@@ -408,12 +408,12 @@ public static class ExportService
                         col.Item().PaddingTop(15).Text(loc.Experience).FontSize(14).Bold();
                         foreach (var exp in experiences)
                         {
-                            var startStr = exp.StartDate.ToString("MM/yyyy");
+                            var startStr = exp.StartDate?.ToString("MM/yyyy");
                             var endStr = exp.IsCurrent ? loc.Present : (exp.EndDate?.ToString("MM/yyyy") ?? loc.Present);
 
                             col.Item().PaddingTop(5).Row(row =>
                             {
-                                row.RelativeItem().Text($"{exp.JobTitle} | {exp.CompanyName}").Bold();
+                                row.RelativeItem().Text($"{exp.Role} | {exp.Company}").Bold();
                                 row.ConstantItem(150).AlignRight().Text($"{startStr} - {endStr}").Italic();
                             });
 
@@ -430,15 +430,15 @@ public static class ExportService
                         col.Item().PaddingTop(15).Text(loc.Education).FontSize(14).Bold();
                         foreach (var edu in educations)
                         {
-                            var startStr = edu.StartDate.ToString("MM/yyyy");
-                            var endStr = edu.IsCurrent ? loc.Present : (edu.EndDate?.ToString("MM/yyyy") ?? loc.Present);
+                            var completionStr = edu.CompletionDate?.ToString("MM/yyyy") ?? "";
+                            var completionPart = string.IsNullOrEmpty(completionStr) ? "" : $" ({completionStr})";
 
                             col.Item().PaddingTop(5).Row(row =>
                             {
-                                row.RelativeItem().Text($"{edu.Degree} em {edu.FieldOfStudy}").Bold();
-                                row.ConstantItem(150).AlignRight().Text($"{startStr} - {endStr}").Italic();
+                                row.RelativeItem().Text($"{edu.Degree} em {edu.Course}").Bold();
+                                row.ConstantItem(150).AlignRight().Text(completionStr).Italic();
                             });
-                            col.Item().Text(edu.Institution).FontSize(10);
+                            col.Item().Text($"{edu.Institution}{completionPart}").FontSize(10);
                         }
                     }
 
@@ -448,13 +448,13 @@ public static class ExportService
                         col.Item().PaddingTop(15).Text(loc.Certifications).FontSize(14).Bold();
                         foreach (var cert in certifications)
                         {
-                            var dateStr = cert.IssueDate?.ToString("MM/yyyy") ?? "";
+                            var dateStr = cert.IssuedAt?.ToString("MM/yyyy") ?? "";
                             var datePart = string.IsNullOrEmpty(dateStr) ? "" : $" ({dateStr})";
 
-                            col.Item().PaddingTop(3).Text($"{cert.Name} | {cert.IssuingOrganization}{datePart}");
-                            if (!string.IsNullOrEmpty(cert.CredentialId))
+                            col.Item().PaddingTop(3).Text($"{cert.Name} | {cert.Issuer}{datePart}");
+                            if (!string.IsNullOrEmpty(cert.CredentialUrl))
                             {
-                                col.Item().Text($"ID: {cert.CredentialId}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                col.Item().Text($"ID: {cert.CredentialUrl}").FontSize(9).FontColor(Colors.Grey.Darken1);
                             }
                         }
                     }
