@@ -117,7 +117,7 @@ public class GoogleLoginExchangeService
         return state;
     }
 
-    public bool TryConsumeOAuthState(string state)
+    public bool TryConsumeOAuthState(string? state)
     {
         if (string.IsNullOrWhiteSpace(state)) return false;
 
