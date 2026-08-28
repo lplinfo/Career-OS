@@ -24,7 +24,13 @@ public class CareerDbContext(DbContextOptions<CareerDbContext> options)
             b.Property(u => u.Email).HasMaxLength(320);
             b.Property(u => u.UserName).HasMaxLength(320);
             b.Property(u => u.NormalizedEmail).HasMaxLength(320);
+            b.Property(u => u.NormalizedUserName).HasMaxLength(320);
             b.HasIndex(u => u.NormalizedUserName).HasDatabaseName("UserNameIndex").IsUnique();
+            b.HasIndex(u => u.NormalizedEmail).HasDatabaseName("EmailIndex").IsUnique();
+            b.HasOne<CandidateProfile>()
+             .WithMany()
+             .HasForeignKey(u => u.CandidateProfileId)
+             .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<IdentityUserClaim<Guid>>(b =>

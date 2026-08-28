@@ -3,6 +3,7 @@ using CareerOS.Api.Contracts;
 using CareerOS.Api.Data;
 using CareerOS.Api.Domain;
 using CareerOS.Api.Services;
+using CareerOS.Api.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -105,6 +106,38 @@ public class AuthController(
         var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
+            if (!string.IsNullOrEmpty(user.LegacyPasswordHash) &&
+                PasswordHasher.VerifyPassword(request.Password, user.LegacyPasswordHash))
+            {
+                if (!string.IsNullOrEmpty(user.PasswordHash))
+                {
+                    await userManager.RemovePasswordAsync(user);
+                }
+
+                var addPasswordResult = await userManager.AddPasswordAsync(user, request.Password);
+                if (addPasswordResult.Succeeded)
+                {
+                    user.LegacyPasswordHash = null;
+                    await userManager.UpdateAsync(user);
+
+                    var legacyProfile = await dbContext.CandidateProfiles.FirstOrDefaultAsync(p => p.Id == user.CandidateProfileId);
+                    var (legacyToken, legacyExpiresAt) = tokenService.GenerateAccessToken(user);
+
+                    var legacyResponse = new AuthResponse
+                    {
+                        UserId = user.Id,
+                        Email = user.Email ?? request.Email,
+                        CandidateProfileId = user.CandidateProfileId,
+                        FullName = legacyProfile?.FullName ?? string.Empty,
+                        AccessToken = legacyToken,
+                        TokenType = "Bearer",
+                        ExpiresAt = legacyExpiresAt
+                    };
+
+                    return Ok(legacyResponse);
+                }
+            }
+
             return Unauthorized(new { message = "Invalid email or password" });
         }
 

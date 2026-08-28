@@ -1,6 +1,9 @@
 using CareerOS.Api.Contracts;
 using CareerOS.Api.Data;
 using CareerOS.Api.Domain;
+using CareerOS.Api.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,18 +14,57 @@ using System.Threading.Tasks;
 namespace CareerOS.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/candidate-profiles")]
-public class CandidateProfilesController(CareerDbContext db) : ControllerBase
+public class CandidateProfilesController(
+    CareerDbContext db,
+    ICurrentUser currentUser,
+    UserManager<ApplicationUser>? userManager = null) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CandidateProfile>>> GetAll() => Ok(await db.CandidateProfiles.Include(x => x.WorkExperiences).Include(x => x.EducationHistory).Include(x => x.Certifications).OrderBy(x => x.FullName).ToListAsync());
+    public async Task<ActionResult<IEnumerable<CandidateProfile>>> GetAll()
+    {
+        if (currentUser.CandidateProfileId is not { } profileId || profileId == Guid.Empty)
+        {
+            return Ok(Array.Empty<CandidateProfile>());
+        }
+
+        var profiles = await db.CandidateProfiles
+            .Include(x => x.WorkExperiences)
+            .Include(x => x.EducationHistory)
+            .Include(x => x.Certifications)
+            .Where(x => x.Id == profileId)
+            .OrderBy(x => x.FullName)
+            .ToListAsync();
+
+        return Ok(profiles);
+    }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<CandidateProfile>> Get(Guid id) => await db.CandidateProfiles.Include(x => x.WorkExperiences).Include(x => x.EducationHistory).Include(x => x.Certifications).FirstOrDefaultAsync(x => x.Id == id) is { } profile ? Ok(profile) : NotFound();
+    public async Task<ActionResult<CandidateProfile>> Get(Guid id)
+    {
+        if (currentUser.CandidateProfileId == null || currentUser.CandidateProfileId == Guid.Empty || currentUser.CandidateProfileId != id)
+        {
+            return NotFound();
+        }
+
+        var profile = await db.CandidateProfiles
+            .Include(x => x.WorkExperiences)
+            .Include(x => x.EducationHistory)
+            .Include(x => x.Certifications)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        return profile is not null ? Ok(profile) : NotFound();
+    }
 
     [HttpPost]
     public async Task<ActionResult<CandidateProfile>> Create(CandidateProfileRequest request)
     {
+        if (currentUser.CandidateProfileId is not null && currentUser.CandidateProfileId != Guid.Empty)
+        {
+            return Conflict(new { message = "User already has a candidate profile." });
+        }
+
         var validationError = ValidateRequest(request);
         if (validationError != null) return BadRequest(new { message = validationError });
 
@@ -30,12 +72,28 @@ public class CandidateProfilesController(CareerDbContext db) : ControllerBase
         db.CandidateProfiles.Add(profile);
         Apply(profile, request);
         await db.SaveChangesAsync();
+
+        if (currentUser.UserId != Guid.Empty && userManager != null)
+        {
+            var user = await userManager.FindByIdAsync(currentUser.UserId.ToString());
+            if (user != null)
+            {
+                user.CandidateProfileId = profile.Id;
+                await userManager.UpdateAsync(user);
+            }
+        }
+
         return CreatedAtAction(nameof(Get), new { id = profile.Id }, profile);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<CandidateProfile>> Update(Guid id, CandidateProfileRequest request)
     {
+        if (currentUser.CandidateProfileId == null || currentUser.CandidateProfileId == Guid.Empty || currentUser.CandidateProfileId != id)
+        {
+            return NotFound();
+        }
+
         var validationError = ValidateRequest(request);
         if (validationError != null) return BadRequest(new { message = validationError });
 
@@ -63,6 +121,11 @@ public class CandidateProfilesController(CareerDbContext db) : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        if (currentUser.CandidateProfileId == null || currentUser.CandidateProfileId == Guid.Empty || currentUser.CandidateProfileId != id)
+        {
+            return NotFound();
+        }
+
         var profile = await db.CandidateProfiles
             .Include(x => x.WorkExperiences)
             .Include(x => x.EducationHistory)
