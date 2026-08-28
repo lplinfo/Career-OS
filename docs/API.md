@@ -29,14 +29,17 @@ Validações: `email` (obrigatório, formato e-mail, máx. 320), `password` (mí
 
 **Respostas**
 
-- `200 OK` — sucesso:
+- `200 OK` — sucesso (mesmo `AuthResponse` do login, ver modelo no final):
 
 ```json
 {
   "userId": "guid",
   "email": "ana@example.com",
   "candidateProfileId": "guid",
-  "fullName": "Ana Souza"
+  "fullName": "Ana Souza",
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "expiresAt": "2026-08-29T00:00:00+00:00"
 }
 ```
 
@@ -57,12 +60,64 @@ Autentica e retorna a sessão.
 
 **Respostas**
 
-- `200 OK` — mesmo formato do `AuthResponse` do register.
+- `200 OK` — `AuthResponse` (mesmo formato do register, inclui `accessToken`/`expiresAt`).
 - `401 Unauthorized` — `{ "message": "E-mail ou senha incorretos." }`.
+
+Conta com *lockout* e, para contas legadas (hash SHA-256), faz *lazy migration* atômica para o hash do Identity ao validar a senha.
+
+### `GET /api/auth/me`
+
+Retorna a sessão do usuário autenticado.
+
+**Requires**: `Authorization: Bearer <token>`.
+
+**Respostas**
+
+- `200 OK` — `AuthResponse` do usuário atual.
+- `401 Unauthorized` — token ausente, inválido ou expirado.
+
+### `POST /api/auth/login-google`
+
+Inicia o fluxo de login social com Google. Redireciona o navegador para a URL de autorização do Google (0Auth) com `state` de proteção CSRF.
+
+**Respostas**
+
+- `302 Found` — `Location` apontando para o Google (requer `Authentication:Google:ClientId`/`ClientSecret` configurados e aplicação registrada no Google Cloud).
+
+### `GET /api/auth/login-google-complete`
+
+Callback do Google após o usuário consentir. Valida o `state` (uso único, expiração de 120s), troca o `code` por token e redireciona o navegador para `Authentication:FrontendBaseUrl/auth/callback?code=...`.
+
+**Query**: `code` (obrigatório) · `state` (obrigatório).
+
+**Respostas**
+
+- `302 Found` — redirecionamento para o frontend com o `code` efêmero.
+- `400 Bad Request` — `code` ausente ou `state` inválido/expirado.
+
+### `POST /api/auth/exchange-google`
+
+Troca o `code` efêmero (gerado pelo callback, uso único, 60s) por uma sessão final.
+
+**Body** (`ExchangeGoogleRequest`):
+
+```json
+{ "code": "efemero_code" }
+```
+
+**Respostas**
+
+- `200 OK` — `AuthResponse`.
+- `400 Bad Request` — `code` inválido, expirado ou já utilizado.
 
 ---
 
 ## Candidate Profiles
+
+> **Autorização**: desde a Onda 2, todas as rotas de perfis e currículos exigem
+> `Authorization: Bearer <token>` (JWT obtido no `register`/`login`). O acesso é limitado ao
+> **dono** do perfil (via `ICurrentUser`): sem token → `401 Unauthorized`; recurso de outro
+> usuário → `404 Not Found`.
 
 ### `GET /api/candidate-profiles`
 
@@ -205,7 +260,15 @@ Os três formatos carregam o perfil associado (com coleções) antes de gerar o 
 **AuthResponse**
 
 ```json
-{ "userId": "guid", "email": "string", "candidateProfileId": "guid", "fullName": "string" }
+{
+  "userId": "guid",
+  "email": "string",
+  "candidateProfileId": "guid",
+  "fullName": "string",
+  "accessToken": "JWT (Bearer)",
+  "tokenType": "Bearer",
+  "expiresAt": "ISO-8601"
+}
 ```
 
 **Resume**
