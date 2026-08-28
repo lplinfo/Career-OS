@@ -31,3 +31,9 @@ public class LoginRequest
     [Required]
     public string Password { get; set; } = string.Empty;
 }
+
+public class ExchangeGoogleRequest
+{
+    [Required]
+    public string Code { get; set; } = string.Empty;
+}

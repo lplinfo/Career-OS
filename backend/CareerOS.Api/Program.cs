@@ -19,15 +19,15 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure JwtOptions
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-var secretKey = jwtOptions.SecretKey;
-if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetBytes(secretKey).Length < 32)
+if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey) || Encoding.UTF8.GetBytes(jwtOptions.SecretKey).Length < 32)
 {
-    secretKey = "CareerOS_Development_Default_Secret_Key_At_Least_32_Bytes!";
+    throw new InvalidOperationException("JWT SecretKey must be configured and at least 256 bits (32 bytes) long.");
 }
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddHttpClient<GoogleLoginExchangeService>();
+builder.Services.AddHttpContextAccessor();
 
 // Configure DbContext
 builder.Services.AddDbContext<CareerDbContext>(options =>
@@ -62,7 +62,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = jwtOptions.Audience,
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromSeconds(5),
         NameClaimType = ClaimTypes.Email
