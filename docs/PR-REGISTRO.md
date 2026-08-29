@@ -22,5 +22,6 @@ do CareerOS. O padrão está documentado em [PADRAO-PR.md](PADRAO-PR.md).
 | PR-009  | feat: autenticação Google (backend callback + frontend) (Onda 2-B) | merged | feat/auth-onda2-final (PR GitHub #9) |
 | PR-010  | docs: guia de build e execução local + atualização docs API/ARQUITETURA/registro | merged | docs/PR-010-build-run-guide (PR GitHub #10) |
 | PR-011  | fix: Avaliação oAuth - remover fallback hardcoded da chave JWT, nullable-state no OAuth e GET na doc | merged | jules-3049268554996624897 (PR GitHub #11) |
+| PR-012  | chore: remover arquivos e documentação antiga (docs placeholder e scripts bootstrap) | aberto | doc-clean_old_files (PR GitHub #12) |
 
-> Próximo número livre: `PR-012`.
+> Próximo número livre: `PR-013`.
