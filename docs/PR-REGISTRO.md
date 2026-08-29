@@ -20,6 +20,7 @@ do CareerOS. O padrão está documentado em [PADRAO-PR.md](PADRAO-PR.md).
 | PR-007  | feat: migrar usuários para IdentityCore e adicionar JWT (Onda 1) | merged | feat/auth-onda1 |
 | PR-008  | feat: auth evolution, filtros de dono, migration e rehash legado (Onda 2-A) | merged | feat-PR-008-backend-auth-owner-filters (PR GitHub #7) |
 | PR-009  | feat: autenticação Google (backend callback + frontend) (Onda 2-B) | merged | feat/auth-onda2-final (PR GitHub #9) |
-| PR-010  | docs: guia de build e execução local + atualização docs API/ARQUITETURA/registro | aberto | docs/PR-010-build-run-guide |
+| PR-010  | docs: guia de build e execução local + atualização docs API/ARQUITETURA/registro | merged | docs/PR-010-build-run-guide (PR GitHub #10) |
+| PR-011  | fix: Avaliação oAuth - remover fallback hardcoded da chave JWT, nullable-state no OAuth e GET na doc | merged | jules-3049268554996624897 (PR GitHub #11) |
 
-> Próximo número livre: `PR-011`.
+> Próximo número livre: `PR-012`.
