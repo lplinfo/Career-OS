@@ -1,0 +1,51 @@
+name: CI - backend & frontend tests
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    name: Backend tests (xUnit/.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run dotnet test
+        run: dotnet test CareerOS.sln
+
+  frontend-tests:
+    name: Frontend tests (Karma/Angular)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: npm ci
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run ng test (Karma, single-run)
+        run: npm test -- --watch=false
+        working-directory: frontend
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chromePath }}
