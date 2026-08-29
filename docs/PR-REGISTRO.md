@@ -23,6 +23,6 @@ do CareerOS. O padrão está documentado em [PADRAO-PR.md](PADRAO-PR.md).
 | PR-010  | docs: guia de build e execução local + atualização docs API/ARQUITETURA/registro | merged | docs/PR-010-build-run-guide (PR GitHub #10) |
 | PR-011  | fix: Avaliação oAuth - remover fallback hardcoded da chave JWT, nullable-state no OAuth e GET na doc | merged | jules-3049268554996624897 (PR GitHub #11) |
 | PR-012  | chore: remover arquivos e documentação antiga (docs placeholder e scripts bootstrap) | merged | doc-clean_old_files (PR GitHub #12) |
-| PR-013  | chore: atualizar Angular 21 para 21.2.22 (fix de 17 vulnerabilidades no npm audit) + testes na pipeline | aberto | chore/PR-013-update-angular (PR GitHub #13) |
+| PR-013  | chore: atualizar Angular 21 para 21.2.22 (fix de 17 vulnerabilidades no npm audit) + testes na pipeline | merged | chore/PR-013-update-angular (PR GitHub #13) |
 
 > Próximo número livre: `PR-014`.
