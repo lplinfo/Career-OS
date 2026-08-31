@@ -173,13 +173,13 @@ public class LinkedinParserService : ILinkedinParserService
                 current = new ParsedWorkExperienceDto();
                 if (i >= 2)
                 {
-                    current.Role = lines[i - 2];
-                    current.Company = lines[i - 1];
+                    current.Company = lines[i - 2];
+                    current.Role = lines[i - 1];
                 }
                 else if (i >= 1)
                 {
-                    current.Role = lines[i - 1];
-                    current.Company = "Empresa não especificada";
+                    current.Company = lines[i - 1];
+                    current.Role = "Cargo não especificado";
                 }
 
                 current.StartDate = ParseDate(dateMatch.Groups["start"].Value);
@@ -229,17 +229,48 @@ public class LinkedinParserService : ILinkedinParserService
     {
         var list = new List<ParsedEducationDto>();
         int order = 0;
+        ParsedEducationDto? current = null;
 
-        for (int i = 0; i < lines.Count; i += 2)
+        foreach (var line in lines)
         {
-            var inst = lines[i];
-            var course = (i + 1 < lines.Count) ? lines[i + 1] : "Curso Geral";
-            list.Add(new ParsedEducationDto
+            var l = line.Trim();
+            if (string.IsNullOrWhiteSpace(l)) continue;
+
+            if (DateRangeRegex.IsMatch(l) || Regex.IsMatch(l, @"^\d{4}(\s*[-–—]\s*\d{4})?$"))
             {
-                Institution = inst,
-                Course = course,
-                DisplayOrder = order++
-            });
+                continue;
+            }
+
+            if (current == null)
+            {
+                current = new ParsedEducationDto
+                {
+                    Institution = l,
+                    DisplayOrder = order++
+                };
+            }
+            else if (string.IsNullOrWhiteSpace(current.Course) || current.Course == "Curso Geral")
+            {
+                current.Course = l;
+            }
+            else
+            {
+                list.Add(current);
+                current = new ParsedEducationDto
+                {
+                    Institution = l,
+                    DisplayOrder = order++
+                };
+            }
+        }
+
+        if (current != null)
+        {
+            if (string.IsNullOrWhiteSpace(current.Course))
+            {
+                current.Course = "Curso Geral";
+            }
+            list.Add(current);
         }
 
         return list;
@@ -249,17 +280,44 @@ public class LinkedinParserService : ILinkedinParserService
     {
         var list = new List<ParsedCertificationDto>();
         int order = 0;
+        ParsedCertificationDto? current = null;
 
-        for (int i = 0; i < lines.Count; i += 2)
+        foreach (var line in lines)
         {
-            var name = lines[i];
-            var issuer = (i + 1 < lines.Count) ? lines[i + 1] : null;
-            list.Add(new ParsedCertificationDto
+            var l = line.Trim();
+            if (string.IsNullOrWhiteSpace(l)) continue;
+
+            if (DateRangeRegex.IsMatch(l) || Regex.IsMatch(l, @"^(Emitido|Issued|Credential|ID\b)", RegexOptions.IgnoreCase))
             {
-                Name = name,
-                Issuer = issuer,
-                DisplayOrder = order++
-            });
+                continue;
+            }
+
+            if (current == null)
+            {
+                current = new ParsedCertificationDto
+                {
+                    Name = l,
+                    DisplayOrder = order++
+                };
+            }
+            else if (string.IsNullOrWhiteSpace(current.Issuer))
+            {
+                current.Issuer = l;
+            }
+            else
+            {
+                list.Add(current);
+                current = new ParsedCertificationDto
+                {
+                    Name = l,
+                    DisplayOrder = order++
+                };
+            }
+        }
+
+        if (current != null)
+        {
+            list.Add(current);
         }
 
         return list;

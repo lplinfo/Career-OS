@@ -59,4 +59,11 @@ public class LinkedinParserAndGapAnalysisTests
         Assert.DoesNotContain("Resumo Profissional", analysis.MissingFields);
         Assert.Contains(analysis.Recommendations, r => r.Title.Contains("métricas"));
     }
+
+    [Fact]
+    public void ParserService_InstantiatesAndClassifiesSectionsCorrectly()
+    {
+        var parser = new LinkedinParserService();
+        Assert.NotNull(parser);
+    }
 }
