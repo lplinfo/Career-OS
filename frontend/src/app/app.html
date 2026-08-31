@@ -98,7 +98,7 @@
               }
             </div>
 
-            <div class="grid-2" style="margin-bottom: 0;">
+            <div class="grid-2">
               <div class="form-group">
                 <label for="regPassword">Senha *</label>
                 <input type="password" id="regPassword" formControlName="password" placeholder="Mínimo 6 caracteres" [ngClass]="{ 'field-error': registerForm.get('password')?.invalid && registerForm.get('password')?.touched }">
