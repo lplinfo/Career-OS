@@ -130,27 +130,113 @@
   <!-- AUTHENTICATED WORKSPACE -->
   @if (currentUser) {
     <main class="app-content">
+      <!-- LinkedIn Import & Integration Banner -->
+      <div class="linkedin-banner card">
+        <div class="banner-content">
+          <div class="banner-text">
+            <h3>Importar Perfil do LinkedIn</h3>
+            <p>Economize tempo! Importe seus dados a partir do PDF exportado do seu LinkedIn ("Salvar como PDF") e veja sugestões de otimização de perfil.</p>
+          </div>
+          <div class="banner-action">
+            <label for="linkedinPdfInput" class="btn btn-primary linkedin-upload-btn">
+              @if (isImportingLinkedin) {
+                <span>Analisando PDF...</span>
+              } @else {
+                <span>📄 Importar PDF do LinkedIn</span>
+              }
+            </label>
+            <input type="file" id="linkedinPdfInput" accept=".pdf" (change)="onLinkedinFileSelected($event)" style="display: none;">
+
+            @if (gapAnalysisData) {
+              <button type="button" class="btn btn-outline" (click)="showLinkedinModal = true" style="margin-left: 0.5rem;">
+                Ver Comparativo / Gaps
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tabs: Edit Profile vs Gap Analysis / To-Do -->
+      @if (gapAnalysisData) {
+        <div class="profile-mode-tabs">
+          <button type="button" class="tab-mode-btn" [ngClass]="{ 'active': activeProfileTab === 'profile' }" (click)="activeProfileTab = 'profile'">
+            ✏️ Preenchimento do Perfil
+          </button>
+          <button type="button" class="tab-mode-btn" [ngClass]="{ 'active': activeProfileTab === 'todo' }" (click)="activeProfileTab = 'todo'">
+            💡 Dicas & TO-DOs (Análise de Gaps)
+            <span class="badge-score" [ngClass]="{ 'score-high': gapAnalysisData.completenessScore >= 80, 'score-medium': gapAnalysisData.completenessScore >= 50 && gapAnalysisData.completenessScore < 80, 'score-low': gapAnalysisData.completenessScore < 50 }">
+              {{ gapAnalysisData.completenessScore }}% Completo
+            </span>
+          </button>
+        </div>
+      }
+
+      @if (activeProfileTab === 'todo' && gapAnalysisData) {
+        <section class="form-section gap-analysis-section card">
+          <div class="gap-header">
+            <h2>Diagnóstico & Dicas de Otimização do Perfil</h2>
+            <div class="score-display">
+              <span class="score-number">{{ gapAnalysisData.completenessScore }}%</span>
+              <span class="score-label">Nível de Completação</span>
+            </div>
+          </div>
+
+          @if (gapAnalysisData.missingFields && gapAnalysisData.missingFields.length > 0) {
+            <div class="missing-fields-box">
+              <h4>Campos Faltantes Identificados:</h4>
+              <div class="tags-container">
+                @for (missing of gapAnalysisData.missingFields; track missing) {
+                  <span class="missing-tag">⚠️ {{ missing }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="recommendations-list">
+            <h3>Recomendações Estratégicas:</h3>
+            @for (rec of gapAnalysisData.recommendations; track rec.title) {
+              <div class="recommendation-card" [ngClass]="rec.severity">
+                <div class="rec-header">
+                  <span class="rec-category">{{ rec.category }}</span>
+                  <span class="rec-severity-badge">{{ rec.severity.toUpperCase() }}</span>
+                </div>
+                <h4>{{ rec.title }}</h4>
+                <p>{{ rec.description }}</p>
+                @if (rec.actionableRecommendation) {
+                  <div class="rec-action-box">
+                    <strong>👉 Recomendação:</strong> {{ rec.actionableRecommendation }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
       <!-- Stepper Navigation Header -->
-      <nav class="stepper">
-        <button class="step-btn" [ngClass]="{ 'active': currentStep === 1, 'completed': currentStep > 1 }" (click)="currentStep = 1">
-          <span class="num">1</span> Perfil
-        </button>
-        <button class="step-btn" [ngClass]="{ 'active': currentStep === 2, 'completed': currentStep > 2 }" (click)="currentStep = 2">
-          <span class="num">2</span> Experiências
-        </button>
-        <button class="step-btn" [ngClass]="{ 'active': currentStep === 3, 'completed': currentStep > 3 }" (click)="currentStep = 3">
-          <span class="num">3</span> Formação
-        </button>
-        <button class="step-btn" [ngClass]="{ 'active': currentStep === 4, 'completed': currentStep > 4 }" (click)="currentStep = 4">
-          <span class="num">4</span> Certificações
-        </button>
-        <button class="step-btn" [ngClass]="{ 'active': currentStep === 5, 'completed': currentStep > 5 }" (click)="currentStep = 5">
-          <span class="num">5</span> Currículos & Exportação
-        </button>
-      </nav>
+      @if (activeProfileTab === 'profile') {
+        <nav class="stepper">
+          <button class="step-btn" [ngClass]="{ 'active': currentStep === 1, 'completed': currentStep > 1 }" (click)="currentStep = 1">
+            <span class="num">1</span> Perfil
+          </button>
+          <button class="step-btn" [ngClass]="{ 'active': currentStep === 2, 'completed': currentStep > 2 }" (click)="currentStep = 2">
+            <span class="num">2</span> Experiências
+          </button>
+          <button class="step-btn" [ngClass]="{ 'active': currentStep === 3, 'completed': currentStep > 3 }" (click)="currentStep = 3">
+            <span class="num">3</span> Formação
+          </button>
+          <button class="step-btn" [ngClass]="{ 'active': currentStep === 4, 'completed': currentStep > 4 }" (click)="currentStep = 4">
+            <span class="num">4</span> Certificações
+          </button>
+          <button class="step-btn" [ngClass]="{ 'active': currentStep === 5, 'completed': currentStep > 5 }" (click)="currentStep = 5">
+            <span class="num">5</span> Currículos & Exportação
+          </button>
+        </nav>
+      }
 
       <!-- Main Form and Content Area -->
-      <form [formGroup]="profileForm" (ngSubmit)="$event.preventDefault()">
+      @if (activeProfileTab === 'profile') {
+        <form [formGroup]="profileForm" (ngSubmit)="$event.preventDefault()">
 
         <!-- STEP 1: Candidate Profile -->
         @if (currentStep === 1) {
@@ -554,6 +640,155 @@
         </footer>
 
       </form>
+      }
     </main>
+  }
+
+  <!-- Side-by-Side LinkedIn Merge Modal -->
+  @if (showLinkedinModal && importedLinkedinData) {
+    <div class="modal-overlay">
+      <div class="modal-card side-by-side-modal">
+        <div class="modal-header">
+          <h2>Comparativo: Perfil Atual vs. LinkedIn Importado</h2>
+          <button type="button" class="close-btn" (click)="showLinkedinModal = false">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-intro">Compare os dados extraídos do seu PDF do LinkedIn com as informações cadastradas no CareerOS. Escolha mesclar campos individuais ou importar tudo de uma vez.</p>
+
+          <div class="side-by-side-grid">
+            <!-- Left Column: Current Profile -->
+            <div class="compare-col current-col">
+              <h3>Atual no CareerOS</h3>
+
+              <div class="field-compare">
+                <label>Nome Completo:</label>
+                <div class="field-val">{{ profileForm.get('fullName')?.value || '(não preenchido)' }}</div>
+              </div>
+
+              <div class="field-compare">
+                <label>Título Profissional:</label>
+                <div class="field-val">{{ profileForm.get('professionalTitle')?.value || '(não preenchido)' }}</div>
+              </div>
+
+              <div class="field-compare">
+                <label>E-mail:</label>
+                <div class="field-val">{{ profileForm.get('email')?.value || '(não preenchido)' }}</div>
+              </div>
+
+              <div class="field-compare">
+                <label>Telefone:</label>
+                <div class="field-val">{{ profileForm.get('phone')?.value || '(não preenchido)' }}</div>
+              </div>
+
+              <div class="field-compare">
+                <label>Localização:</label>
+                <div class="field-val">
+                  {{ profileForm.get('city')?.value || '' }} {{ profileForm.get('region')?.value || '' }} {{ profileForm.get('country')?.value || '' }}
+                  @if (!profileForm.get('city')?.value && !profileForm.get('country')?.value) {
+                    <span>(não preenchido)</span>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>Resumo Profissional:</label>
+                <div class="field-val summary-val">{{ profileForm.get('professionalSummary')?.value || '(não preenchido)' }}</div>
+              </div>
+
+              <div class="field-compare">
+                <label>Experiências:</label>
+                <div class="field-val">{{ experiencesArray.length }} cadastradas</div>
+              </div>
+
+              <div class="field-compare">
+                <label>Formações:</label>
+                <div class="field-val">{{ educationsArray.length }} cadastradas</div>
+              </div>
+            </div>
+
+            <!-- Right Column: LinkedIn Parsed Data -->
+            <div class="compare-col linkedin-col">
+              <h3>Extraído do LinkedIn</h3>
+
+              <div class="field-compare">
+                <label>Nome Completo:</label>
+                <div class="field-val-row">
+                  <span>{{ importedLinkedinData.fullName || '(não localizado)' }}</span>
+                  @if (importedLinkedinData.fullName) {
+                    <button type="button" class="btn btn-sm btn-outline" (click)="applyLinkedinField('fullName')">Usar Este</button>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>Título Profissional:</label>
+                <div class="field-val-row">
+                  <span>{{ importedLinkedinData.professionalTitle || '(não localizado)' }}</span>
+                  @if (importedLinkedinData.professionalTitle) {
+                    <button type="button" class="btn btn-sm btn-outline" (click)="applyLinkedinField('professionalTitle')">Usar Este</button>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>E-mail:</label>
+                <div class="field-val-row">
+                  <span>{{ importedLinkedinData.email || '(não localizado)' }}</span>
+                  @if (importedLinkedinData.email) {
+                    <button type="button" class="btn btn-sm btn-outline" (click)="applyLinkedinField('email')">Usar Este</button>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>Telefone:</label>
+                <div class="field-val-row">
+                  <span>{{ importedLinkedinData.phone || '(não localizado)' }}</span>
+                  @if (importedLinkedinData.phone) {
+                    <button type="button" class="btn btn-sm btn-outline" (click)="applyLinkedinField('phone')">Usar Este</button>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>Localização:</label>
+                <div class="field-val-row">
+                  <span>{{ importedLinkedinData.city || '' }} {{ importedLinkedinData.region || '' }} {{ importedLinkedinData.country || '' }}</span>
+                  @if (importedLinkedinData.city || importedLinkedinData.country) {
+                    <button type="button" class="btn btn-sm btn-outline" (click)="applyLinkedinField('city'); applyLinkedinField('region'); applyLinkedinField('country')">Usar Este</button>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>Resumo Profissional:</label>
+                <div class="field-val-row summary-row">
+                  <div class="field-val summary-val">{{ importedLinkedinData.professionalSummary || '(não localizado)' }}</div>
+                  @if (importedLinkedinData.professionalSummary) {
+                    <button type="button" class="btn btn-sm btn-outline" (click)="applyLinkedinField('professionalSummary')">Usar Este</button>
+                  }
+                </div>
+              </div>
+
+              <div class="field-compare">
+                <label>Experiências Encontradas:</label>
+                <div class="field-val">{{ importedLinkedinData.workExperiences?.length || 0 }} no PDF</div>
+              </div>
+
+              <div class="field-compare">
+                <label>Formações Encontradas:</label>
+                <div class="field-val">{{ importedLinkedinData.educationHistory?.length || 0 }} no PDF</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" (click)="mergeAllLinkedinData()">Substituir e Mesclar Todos os Dados do LinkedIn</button>
+          <button type="button" class="btn btn-outline" (click)="showLinkedinModal = false">Fechar</button>
+        </div>
+      </div>
+    </div>
   }
 </div>
