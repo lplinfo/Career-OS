@@ -25,6 +25,6 @@ do CareerOS. O padrão está documentado em [PADRAO-PR.md](PADRAO-PR.md).
 | PR-012  | chore: remover arquivos e documentação antiga (docs placeholder e scripts bootstrap) | merged | doc-clean_old_files (PR GitHub #12) |
 | PR-013  | chore: atualizar Angular 21 para 21.2.22 (fix de 17 vulnerabilidades no npm audit) + testes na pipeline | merged | chore/PR-013-update-angular (PR GitHub #13) |
 | PR-016  | fix: corrigir alinhamento dos campos de login e cadastro | merged | fix/PR-016-login-alinhamento |
-| PR-017  | fix: corrigir criação de usuário (LegacyPasswordHash NOT NULL) + teste de registro | aberto | fix/PR-017-auth-registration (PR GitHub #19) |
+| PR-017  | fix: corrigir criação de usuário (LegacyPasswordHash NOT NULL) + teste de registro | merged | fix/PR-017-auth-registration (PR GitHub #19) |
 
 > Próximo número livre: `PR-018`.
