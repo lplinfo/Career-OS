@@ -205,7 +205,7 @@ export class App implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Registration error', err);
-        const errMsg = err.error?.message || 'Falha ao criar a conta. Certifique-se de que o e-mail não esteja em uso.';
+        const errMsg = err.error?.message || 'Não foi possível criar a conta. Tente novamente em instantes.';
         this.showStatus(errMsg, false);
       }
     });
