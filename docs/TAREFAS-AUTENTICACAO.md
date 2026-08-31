@@ -30,7 +30,7 @@
 
 - **Não expandir escopo**: NÃO implementar Google, NÃO adicionar `[Authorize]`, NÃO mexer em autorização por dono, NÃO criar a migration `AddIdentityCoreToUsers` (é da Onda 2), NÃO alterar as migrations `InitialCreate`/`AddUsers`.
 - **Não editar migrations existentes** (`InitialCreate`, `AddUsers`) e não deletar dados.
-- Seguir o padrão do repo: commits `PR-007: <tipo>: <desc>` (ver `docs/PADRAO-PR.md`), nomes em inglês no código, estilo existente (primary constructors, `DateTimeOffset.UtcNow`).
+- Seguir o padrão do repo: nomes em inglês no código, estilo existente (primary constructors, `DateTimeOffset.UtcNow`).
 - Rodar `dotnet build CareerOS.sln` / `dotnet test CareerOS.sln` ao final e corrigir o que quebrar. O frontend NÃO deve ser alterado nesta onda (exceto se exceção explícita).
 - Ao remover/renomear `User`, atualizar **todas** as referências; a solução deve compilar e os testes devem passar ao final.
 
