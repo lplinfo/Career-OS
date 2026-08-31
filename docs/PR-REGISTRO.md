@@ -27,5 +27,6 @@ do CareerOS. O padrão está documentado em [PADRAO-PR.md](PADRAO-PR.md).
 | PR-016  | fix: corrigir alinhamento dos campos de login e cadastro | merged | fix/PR-016-login-alinhamento |
 | PR-017  | fix: corrigir criação de usuário (LegacyPasswordHash NOT NULL) + teste de registro | merged | fix/PR-017-auth-registration (PR GitHub #19) |
 | PR-018  | test: validação do fluxo de PR automático do pr-registry | aberto | test/PR-018-fulldrem (PR GitHub #22) |
+| PR-019  | fix: alinhar auto-merge do pr-registry ao método squash do ruleset | aberto | fix/PR-019-pr-registry-squash (PR GitHub #24) |
 
-> Próximo número livre: `PR-019`.
+> Próximo número livre: `PR-020`.

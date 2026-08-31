@@ -60,4 +60,4 @@ jobs:
             --body "Atualizacao automatica do \`docs/PR-REGISTRO.md\` apos o merge do ${NUM}.")
           echo "criado: $URL"
           PR_AUTO=$(basename "$URL")
-          gh pr merge "${PR_AUTO}" --auto --merge
+          gh pr merge "${PR_AUTO}" --auto --squash
