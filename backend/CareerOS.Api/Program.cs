@@ -26,6 +26,8 @@ if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey) || Encoding.UTF8.GetBytes(jw
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<ILinkedinParserService, LinkedinParserService>();
+builder.Services.AddScoped<ILinkedinGapAnalysisService, LinkedinGapAnalysisService>();
 builder.Services.AddHttpClient<GoogleLoginExchangeService>();
 builder.Services.AddHttpContextAccessor();
 

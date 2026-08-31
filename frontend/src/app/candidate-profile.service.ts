@@ -9,4 +9,10 @@ export class CandidateProfileService {
   save(id: string | null, profile: unknown) {
     return id ? this.http.put(`${this.url}/${id}`, profile) : this.http.post<{ id: string }>(this.url, profile);
   }
+
+  importLinkedin(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.url}/import-linkedin`, formData);
+  }
 }
