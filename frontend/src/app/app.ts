@@ -71,6 +71,13 @@ export class App implements OnInit, OnDestroy {
   profileForm!: FormGroup;
   resumes: ResumeDto[] = [];
 
+  // LinkedIn Import & Gap Analysis State
+  showLinkedinModal = false;
+  isImportingLinkedin = false;
+  importedLinkedinData: any = null;
+  gapAnalysisData: any = null;
+  activeProfileTab: 'profile' | 'todo' = 'profile';
+
   // Active editing resume state
   editingResume: ResumeDto | null = null;
   showResumeForm = false;
@@ -633,6 +640,115 @@ export class App implements OnInit, OnDestroy {
         error: (err) => console.error(err)
       });
     }
+  }
+
+  // LinkedIn Import Methods
+  onLinkedinFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      this.showStatus('Por favor, selecione um arquivo PDF exportado do LinkedIn.', false);
+      return;
+    }
+
+    this.isImportingLinkedin = true;
+    this.cdr.detectChanges();
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.http.post<any>(`${this.apiUrl}/candidate-profiles/import-linkedin`, formData).subscribe({
+      next: (res) => {
+        this.isImportingLinkedin = false;
+        this.importedLinkedinData = res.parsedProfile;
+        this.gapAnalysisData = res.gapAnalysis;
+        this.showLinkedinModal = true;
+        this.showStatus('PDF do LinkedIn analisado com sucesso!', true);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isImportingLinkedin = false;
+        console.error('Erro na importação do LinkedIn', err);
+        const msg = err.error?.message || 'Não foi possível ler o arquivo PDF do LinkedIn.';
+        this.showStatus(msg, false);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  applyLinkedinField(field: string) {
+    if (!this.importedLinkedinData) return;
+    const val = this.importedLinkedinData[field];
+    if (val !== undefined && val !== null) {
+      this.profileForm.get(field)?.setValue(val);
+      this.saveDraft();
+      this.showStatus(`Campo ${field} atualizado com dados do LinkedIn.`, true);
+      this.cdr.detectChanges();
+    }
+  }
+
+  mergeAllLinkedinData() {
+    if (!this.importedLinkedinData) return;
+
+    const d = this.importedLinkedinData;
+
+    if (d.fullName) this.profileForm.get('fullName')?.setValue(d.fullName);
+    if (d.professionalTitle) this.profileForm.get('professionalTitle')?.setValue(d.professionalTitle);
+    if (d.professionalSummary) this.profileForm.get('professionalSummary')?.setValue(d.professionalSummary);
+    if (d.email) this.profileForm.get('email')?.setValue(d.email);
+    if (d.phone) this.profileForm.get('phone')?.setValue(d.phone);
+    if (d.city) this.profileForm.get('city')?.setValue(d.city);
+    if (d.region) this.profileForm.get('region')?.setValue(d.region);
+    if (d.country) this.profileForm.get('country')?.setValue(d.country);
+
+    if (d.workExperiences && d.workExperiences.length > 0) {
+      this.experiencesArray.clear();
+      d.workExperiences.forEach((exp: any) => {
+        this.addExperience({
+          companyName: exp.company,
+          jobTitle: exp.role,
+          description: exp.description,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          isCurrent: exp.isCurrent,
+          order: exp.displayOrder
+        });
+      });
+    }
+
+    if (d.educationHistory && d.educationHistory.length > 0) {
+      this.educationsArray.clear();
+      d.educationHistory.forEach((edu: any) => {
+        this.addEducation({
+          institution: edu.institution,
+          fieldOfStudy: edu.course,
+          degree: edu.degree || 'Bacharelado',
+          startDate: edu.startDate || '2020-01-01',
+          endDate: edu.completionDate,
+          order: edu.displayOrder
+        });
+      });
+    }
+
+    if (d.certifications && d.certifications.length > 0) {
+      this.certificationsArray.clear();
+      d.certifications.forEach((cert: any) => {
+        this.addCertification({
+          name: cert.name,
+          issuingOrganization: cert.issuer || 'LinkedIn',
+          issueDate: cert.issuedAt,
+          credentialUrl: cert.credentialUrl,
+          order: cert.displayOrder
+        });
+      });
+    }
+
+    this.saveDraft();
+    this.showLinkedinModal = false;
+    this.showStatus('Todos os dados do LinkedIn foram mesclados ao seu perfil!', true);
+    this.cdr.detectChanges();
   }
 
   // Helpers

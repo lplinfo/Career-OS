@@ -40,7 +40,7 @@ public class OwnerFilterTests
         await db.SaveChangesAsync();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new CandidateProfilesController(db, currentUser);
+        var controller = new CandidateProfilesController(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
 
         var actionResult = await controller.GetAll();
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
@@ -61,7 +61,7 @@ public class OwnerFilterTests
         await db.SaveChangesAsync();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new CandidateProfilesController(db, currentUser);
+        var controller = new CandidateProfilesController(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
 
         var actionResult = await controller.Get(otherProfileId);
         Assert.IsType<NotFoundResult>(actionResult.Result);
@@ -74,7 +74,7 @@ public class OwnerFilterTests
         var userProfileId = Guid.NewGuid();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new CandidateProfilesController(db, currentUser);
+        var controller = new CandidateProfilesController(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
 
         var request = new CandidateProfileRequest
         {

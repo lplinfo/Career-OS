@@ -2,6 +2,7 @@ using CareerOS.Api.Contracts;
 using CareerOS.Api.Data;
 using CareerOS.Api.Domain;
 using CareerOS.Api.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,8 @@ namespace CareerOS.Api.Controllers;
 public class CandidateProfilesController(
     CareerDbContext db,
     ICurrentUser currentUser,
+    ILinkedinParserService linkedinParser,
+    ILinkedinGapAnalysisService gapAnalysisService,
     UserManager<ApplicationUser>? userManager = null) : ControllerBase
 {
     [HttpGet]
@@ -141,6 +144,31 @@ public class CandidateProfilesController(
         db.CandidateProfiles.Remove(profile);
         await db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPost("import-linkedin")]
+    public async Task<ActionResult<LinkedinImportResponseDto>> ImportLinkedin(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Um arquivo PDF válido do LinkedIn é obrigatório." });
+        }
+
+        if (!file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) &&
+            !file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Apenas arquivos com formato PDF são aceitos." });
+        }
+
+        using var stream = file.OpenReadStream();
+        var parsedProfile = linkedinParser.ParsePdf(stream);
+        var gapAnalysis = gapAnalysisService.Analyze(parsedProfile);
+
+        return Ok(new LinkedinImportResponseDto
+        {
+            ParsedProfile = parsedProfile,
+            GapAnalysis = gapAnalysis
+        });
     }
 
     private static void Apply(CandidateProfile profile, CandidateProfileRequest request)
