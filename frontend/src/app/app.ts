@@ -40,6 +40,20 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
   return password === confirm ? null : { passwordMismatch: true };
 };
 
+export const passwordStrengthValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const value: string = control.value ?? '';
+  if (!value) return null;
+  const hasMinLength = value.length >= 8;
+  const hasUpper = /[A-Z]/.test(value);
+  const hasLower = /[a-z]/.test(value);
+  const hasDigit = /\d/.test(value);
+  const hasNonAlphanumeric = /[^a-zA-Z0-9]/.test(value);
+  if (hasMinLength && hasUpper && hasLower && hasDigit && hasNonAlphanumeric) {
+    return null;
+  }
+  return { passwordStrength: true };
+};
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -110,7 +124,7 @@ export class App implements OnInit, OnDestroy {
 
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
-      password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
+      password: ['', [Validators.required, passwordStrengthValidator, Validators.maxLength(100)]],
       confirmPassword: ['', [Validators.required]],
       fullName: ['', [Validators.required, Validators.maxLength(200)]],
       professionalTitle: ['', [Validators.required, Validators.maxLength(160)]]

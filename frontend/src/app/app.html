@@ -101,9 +101,9 @@
             <div class="grid-2">
               <div class="form-group">
                 <label for="regPassword">Senha *</label>
-                <input type="password" id="regPassword" formControlName="password" placeholder="Mínimo 6 caracteres" [ngClass]="{ 'field-error': registerForm.get('password')?.invalid && registerForm.get('password')?.touched }">
+                <input type="password" id="regPassword" formControlName="password" placeholder="Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo" [ngClass]="{ 'field-error': registerForm.get('password')?.invalid && registerForm.get('password')?.touched }">
                 @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
-                  <span class="error-text">A senha deve ter no mínimo 6 caracteres.</span>
+                  <span class="error-text">A senha deve ter no mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo.</span>
                 }
               </div>
 

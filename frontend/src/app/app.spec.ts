@@ -2,7 +2,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { App, dateRangeValidator, passwordMatchValidator } from './app';
+import { App, dateRangeValidator, passwordMatchValidator, passwordStrengthValidator } from './app';
 
 describe('App Component and Domain Logic', () => {
   let fixture: ComponentFixture<App>;
@@ -99,6 +99,26 @@ describe('App Component and Domain Logic', () => {
       }, { validators: [passwordMatchValidator] });
 
       expect(registerForm.errors).toEqual({ passwordMismatch: true });
+    });
+
+    it('should accept a strong password meeting the policy', () => {
+      const control = fb.control('Secret123!');
+      expect(passwordStrengthValidator(control)).toBeNull();
+    });
+
+    it('should reject a password that is too short', () => {
+      const control = fb.control('Sec1!');
+      expect(passwordStrengthValidator(control)).toEqual({ passwordStrength: true });
+    });
+
+    it('should reject a password missing an uppercase letter', () => {
+      const control = fb.control('secret123!');
+      expect(passwordStrengthValidator(control)).toEqual({ passwordStrength: true });
+    });
+
+    it('should reject a password missing a symbol', () => {
+      const control = fb.control('Secret1234');
+      expect(passwordStrengthValidator(control)).toEqual({ passwordStrength: true });
     });
   });
 
