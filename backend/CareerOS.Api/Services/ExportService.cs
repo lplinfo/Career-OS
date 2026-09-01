@@ -29,6 +29,7 @@ public static class ExportService
         public string Education { get; set; } = string.Empty;
         public string Certifications { get; set; } = string.Empty;
         public string Present { get; set; } = string.Empty;
+        public string DegreeIn { get; set; } = string.Empty;
     }
 
     private static LocalizedStrings GetLocalization(string language)
@@ -42,7 +43,8 @@ public static class ExportService
                 Experience = "Professional Experience",
                 Education = "Education",
                 Certifications = "Certifications",
-                Present = "Present"
+                Present = "Present",
+                DegreeIn = "in"
             },
             "it" => new LocalizedStrings
             {
@@ -51,7 +53,8 @@ public static class ExportService
                 Experience = "Esperienza Professionale",
                 Education = "Istruzione e Formazione",
                 Certifications = "Certificazioni",
-                Present = "Attuale"
+                Present = "Attuale",
+                DegreeIn = "in"
             },
             _ => new LocalizedStrings // default is "pt"
             {
@@ -60,7 +63,8 @@ public static class ExportService
                 Experience = "Experiência Profissional",
                 Education = "Formação Acadêmica",
                 Certifications = "Certificações",
-                Present = "Atual"
+                Present = "Atual",
+                DegreeIn = "em"
             }
         };
     }
@@ -191,7 +195,7 @@ public static class ExportService
             {
                 var completionStr = edu.CompletionDate?.ToString("MM/yyyy") ?? "";
                 var completionPart = string.IsNullOrEmpty(completionStr) ? "" : $" ({completionStr})";
-                sb.AppendLine($"- {edu.Degree} em {edu.Course}");
+                sb.AppendLine($"- {edu.Degree} {loc.DegreeIn} {edu.Course}");
                 sb.AppendLine($"  {edu.Institution}{completionPart}");
                 sb.AppendLine();
             }
@@ -304,7 +308,7 @@ public static class ExportService
                 {
                     var completionStr = edu.CompletionDate?.ToString("MM/yyyy") ?? "";
                     var completionPart = string.IsNullOrEmpty(completionStr) ? "" : $" ({completionStr})";
-                    var eduPara = new Paragraph(new Run(new Text($"{edu.Degree} em {edu.Course}"))
+                    var eduPara = new Paragraph(new Run(new Text($"{edu.Degree} {loc.DegreeIn} {edu.Course}"))
                     {
                         RunProperties = new RunProperties(new Bold(), new FontSize { Val = "22" }) // 11pt bold
                     });
@@ -435,7 +439,7 @@ public static class ExportService
 
                             col.Item().PaddingTop(5).Row(row =>
                             {
-                                row.RelativeItem().Text($"{edu.Degree} em {edu.Course}").Bold();
+                                row.RelativeItem().Text($"{edu.Degree} {loc.DegreeIn} {edu.Course}").Bold();
                                 row.ConstantItem(150).AlignRight().Text(completionStr).Italic();
                             });
                             col.Item().Text($"{edu.Institution}{completionPart}").FontSize(10);
