@@ -8,10 +8,10 @@ namespace CareerOS.Api.Tests;
 public class ExportServiceTests
 {
     [Theory]
-    [InlineData("en", "PROFESSIONAL SUMMARY")]
-    [InlineData("it", "RIEPILOGO PROFESSIONALE")]
-    [InlineData("pt", "RESUMO PROFISSIONAL")]
-    public void GenerateAtsText_UsesLocalizedHeadersAndCustomizedCollections(string language, string expectedSummaryHeader)
+    [InlineData("en", "PROFESSIONAL SUMMARY", "Bachelor of Science in Computer Science")]
+    [InlineData("it", "RIEPILOGO PROFESSIONALE", "Bachelor of Science in Computer Science")]
+    [InlineData("pt", "RESUMO PROFISSIONAL", "Bachelor of Science em Computer Science")]
+    public void GenerateAtsText_UsesLocalizedHeadersAndCustomizedCollections(string language, string expectedSummaryHeader, string expectedEducationText)
     {
         var profile = CreateProfile();
         var resume = CreateResume(language);
@@ -36,6 +36,7 @@ public class ExportServiceTests
         Assert.Contains(profile.FullName.ToUpperInvariant(), result);
         Assert.Contains(expectedSummaryHeader, result);
         Assert.Contains("Customized Engineering Lead", result);
+        Assert.Contains(expectedEducationText, result);
         Assert.DoesNotContain("Profile Software Engineer", result);
     }
 
@@ -72,10 +73,10 @@ public class ExportServiceTests
     }
 
     [Theory]
-    [InlineData("pt")]
-    [InlineData("en")]
-    [InlineData("it")]
-    public void GenerateDocx_ReturnsNonEmptyOpenXmlPackageForEachLanguage(string language)
+    [InlineData("pt", "Bachelor of Science em Computer Science")]
+    [InlineData("en", "Bachelor of Science in Computer Science")]
+    [InlineData("it", "Bachelor of Science in Computer Science")]
+    public void GenerateDocx_ReturnsNonEmptyOpenXmlPackageForEachLanguage(string language, string expectedEducationText)
     {
         var document = ExportService.GenerateDocx(CreateResume(language), CreateProfile());
 
@@ -83,13 +84,18 @@ public class ExportServiceTests
         Assert.True(document.Length > 2);
         Assert.Equal((byte)'P', document[0]);
         Assert.Equal((byte)'K', document[1]);
+
+        using var memStream = new System.IO.MemoryStream(document);
+        using var wordDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(memStream, false);
+        var fullText = wordDoc.MainDocumentPart?.Document?.Body?.InnerText ?? string.Empty;
+        Assert.Contains(expectedEducationText, fullText);
     }
 
     [Theory]
-    [InlineData("pt")]
-    [InlineData("en")]
-    [InlineData("it")]
-    public void GeneratePdf_ReturnsNonEmptyPdfForEachLanguage(string language)
+    [InlineData("pt", "Bachelor of Science em Computer Science")]
+    [InlineData("en", "Bachelor of Science in Computer Science")]
+    [InlineData("it", "Bachelor of Science in Computer Science")]
+    public void GeneratePdf_ReturnsNonEmptyPdfForEachLanguage(string language, string expectedEducationText)
     {
         var document = ExportService.GeneratePdf(CreateResume(language), CreateProfile());
 
@@ -99,6 +105,10 @@ public class ExportServiceTests
         Assert.Equal((byte)'P', document[1]);
         Assert.Equal((byte)'D', document[2]);
         Assert.Equal((byte)'F', document[3]);
+
+        using var pdfDoc = UglyToad.PdfPig.PdfDocument.Open(document);
+        var extractedText = string.Join(" ", pdfDoc.GetPages().Select(p => p.Text));
+        Assert.Contains(expectedEducationText, extractedText);
     }
 
     private static Resume CreateResume(string language) => new()
