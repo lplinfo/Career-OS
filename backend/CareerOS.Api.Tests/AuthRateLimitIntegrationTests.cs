@@ -72,6 +72,11 @@ public class AuthRateLimitWebFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseSetting("JwtOptions:SecretKey", "Super_Secret_Test_Key_For_Unit_Testing_256_Bits!");
+        builder.UseSetting("JwtOptions:Issuer", "CareerOS.Api");
+        builder.UseSetting("JwtOptions:Audience", "CareerOS.Frontend");
+        builder.UseSetting("JwtOptions:AccessTokenMinutes", "15");
+
         builder.ConfigureServices(services =>
         {
             var descriptor = services.Single(
