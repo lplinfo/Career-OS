@@ -6,13 +6,14 @@ namespace CareerOS.Api.Tests;
 public class PasswordHasherTests
 {
     [Fact]
-    public void HashPassword_IsDeterministicAndNonEmpty()
+    public void HashPassword_IsNonDeterministicAndNonEmpty()
     {
         var firstHash = PasswordHasher.HashPassword("CorrectHorseBatteryStaple!");
         var secondHash = PasswordHasher.HashPassword("CorrectHorseBatteryStaple!");
 
         Assert.False(string.IsNullOrWhiteSpace(firstHash));
-        Assert.Equal(firstHash, secondHash);
+        Assert.False(string.IsNullOrWhiteSpace(secondHash));
+        Assert.NotEqual(firstHash, secondHash);
     }
 
     [Fact]
@@ -27,9 +28,11 @@ public class PasswordHasherTests
     [Fact]
     public void VerifyPassword_ReturnsTrueForCorrectPassword()
     {
-        var hash = PasswordHasher.HashPassword("CorrectHorseBatteryStaple!");
+        var firstHash = PasswordHasher.HashPassword("CorrectHorseBatteryStaple!");
+        var secondHash = PasswordHasher.HashPassword("CorrectHorseBatteryStaple!");
 
-        Assert.True(PasswordHasher.VerifyPassword("CorrectHorseBatteryStaple!", hash));
+        Assert.True(PasswordHasher.VerifyPassword("CorrectHorseBatteryStaple!", firstHash));
+        Assert.True(PasswordHasher.VerifyPassword("CorrectHorseBatteryStaple!", secondHash));
     }
 
     [Fact]
@@ -38,5 +41,16 @@ public class PasswordHasherTests
         var hash = PasswordHasher.HashPassword("CorrectHorseBatteryStaple!");
 
         Assert.False(PasswordHasher.VerifyPassword("wrong-password", hash));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("invalid_format")]
+    [InlineData("PBKDF2$notanumber$salt$hash")]
+    [InlineData("PBKDF2$100000$notbase64!$notbase64!")]
+    public void VerifyPassword_ReturnsFalseForInvalidHashFormat(string invalidHash)
+    {
+        Assert.False(PasswordHasher.VerifyPassword("CorrectHorseBatteryStaple!", invalidHash));
     }
 }
