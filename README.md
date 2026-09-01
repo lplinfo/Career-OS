@@ -10,6 +10,7 @@ CareerOS é uma aplicação para organizar o histórico profissional de candidat
 - Geração de currículos **multilíngues** (pt / en / it) e direcionados a um país (`TargetCountry`).
 - Exportação de currículo em três formatos: **PDF**, **DOCX** e **texto ATS**.
 - Rascunho automático do perfil no `localStorage` do navegador.
+- Gestão centralizada de segredos com **OpenBao** (Vault-compatible) e suporte a AppRole authentication.
 
 ## Tecnologias
 
@@ -18,6 +19,7 @@ CareerOS é uma aplicação para organizar o histórico profissional de candidat
 | API        | ASP.NET Core 9 / C#                 |
 | Frontend   | Angular 21 (standalone)             |
 | Dados      | PostgreSQL + Entity Framework Core  |
+| Segredos   | OpenBao (Vault-compatible AppRole)  |
 | Autenticação | JWT + Google OAuth opcional       |
 | Testes API | xUnit (backend)                     |
 | Docs       | OpenAPI / Swagger                   |
@@ -29,7 +31,10 @@ Career-OS/
 ├── backend/
 │   └── CareerOS.Api/          # API REST ASP.NET Core (Controllers, Domain, Migrations)
 │   └── CareerOS.Api.Tests/    # Testes unitários xUnit
+├── scripts/
+│   └── openbao-bootstrap.sh   # Script de bootstrap e seeding do OpenBao
 ├── frontend/                  # Aplicação Angular (formulário por etapas)
+├── docker-compose.yml         # Containeres OpenBao e PostgreSQL
 ├── CareerOS.sln               # Solução .NET (API + testes)
 └── docs/                      # Documentação (arquitetura e API)
 ```
@@ -40,7 +45,7 @@ Mais detalhes: [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/API.md](docs/A
 
 - [.NET SDK 9](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Node.js](https://nodejs.org/) 20 ou superior, com `npm`
-- [PostgreSQL](https://www.postgresql.org/) rodando localmente
+- [Docker e Docker Compose](https://www.docker.com/) para rodar OpenBao e PostgreSQL
 - Tool global `dotnet-ef` instalada:
 
   ```bash
@@ -48,6 +53,47 @@ Mais detalhes: [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/API.md](docs/A
   ```
 
 - Angular CLI instalado globalmente é opcional; o projeto também funciona com `npx ng` e `npm`
+
+## Gestão de Segredos com OpenBao
+
+O CareerOS utiliza o **OpenBao** (fork comunitário do HashiCorp Vault com API compatível) para gerenciar segredos em runtime (connection string do PostgreSQL, chave secreta JWT e credenciais do Google OAuth).
+
+### 1. Subir a Infraestrutura (Docker Compose)
+
+Suba os serviços do OpenBao e PostgreSQL em containers Docker:
+
+```bash
+docker-compose up -d
+```
+
+> **Dev vs. Prod**: No ambiente de desenvolvimento local (`docker-compose.yml`), o OpenBao roda em modo dev (`-dev`), no qual o cofre inicia desmembrado (*unsealed*) e pronto para uso com token root de desenvolvimento (`root`). Em ambiente de produção, o OpenBao deve rodar em cluster selado (*sealed*) com backend de armazenamento persistente criptografado (e.g. Raft) e processo de unseal via Shamir secret sharing ou Auto-Unseal (KMS), prevenindo acesso desautorizado aos dados persistidos.
+
+### 2. Executar o Bootstrap de Segredos
+
+O script de bootstrap habilita a engine KV v2 em `secret/`, grava os segredos dos caminhos `careeros/database`, `careeros/jwt` e `careeros/auth-google`, cria a política `careeros-read`, habilita a autenticação AppRole e configura a role `careeros`:
+
+```bash
+./scripts/openbao-bootstrap.sh
+```
+
+O script é idempotente (pode ser executado múltiplas vezes) e imprimirá as credenciais AppRole (`ROLE_ID` e `SECRET_ID`) ao finalizar.
+
+### 3. Executar a Aplicação com OpenBao Habilitado
+
+Defina as variáveis de ambiente com as credenciais obtidas no bootstrap:
+
+```bash
+export OpenBao__Enabled=true
+export BAO_ADDR=http://localhost:8200
+export BAO_ROLE_ID=<ROLE_ID_GERADO>
+export BAO_SECRET_ID=<SECRET_ID_GERADO>
+
+dotnet run --project backend/CareerOS.Api/CareerOS.Api.csproj --launch-profile https
+```
+
+### 4. Executar sem OpenBao (Modo Fallback / CI)
+
+Caso o OpenBao esteja desativado (`OpenBao__Enabled=false` ou não definido) ou indisponível durante a inicialização, o custom `ConfigurationProvider` no .NET captura o evento e mantém as configurações padrão locais. Isso garante que o pipeline de CI/CD e testes unitários passem de forma resiliente sem depender de instâncias externas de cofre.
 
 ## Executar localmente
 
@@ -59,47 +105,25 @@ Mais detalhes: [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/API.md](docs/A
    dotnet build CareerOS.sln
    ```
 
-2. Crie o banco PostgreSQL `careeros` e garanta que o usuário informado na string de conexão tenha permissão de leitura e escrita:
+2. Suba o banco de dados PostgreSQL e o OpenBao via Docker Compose:
 
-   ```sql
-   CREATE DATABASE careeros;
+   ```bash
+   docker-compose up -d
    ```
 
-3. Configure `ConnectionStrings:CareerDatabase`.
+3. Execute o bootstrap do OpenBao se desejar usar segredos centralizados:
 
-   O valor padrão versionado em `backend/CareerOS.Api/appsettings.json` é:
-
-   ```jsonc
-   "ConnectionStrings": {
-     "CareerDatabase": "Host=localhost;Port=5432;Database=careeros;Username=career_user;Password=careeruser"
-   }
+   ```bash
+   ./scripts/openbao-bootstrap.sh
    ```
 
-   Ajuste esse valor no ambiente local, se necessário, para apontar para o seu PostgreSQL.
-
-4. Crie `backend/CareerOS.Api/appsettings.Development.json` com o bloco `JwtOptions`. Esse arquivo não deve ser versionado e é obrigatório para o backend subir:
-
-   ```jsonc
-   {
-     "JwtOptions": {
-       "SecretKey": "substitua-por-uma-chave-com-pelo-menos-32-bytes",
-       "Issuer": "CareerOS.Api",
-       "Audience": "CareerOS.Frontend"
-     }
-   }
-   ```
-
-   A `SecretKey` precisa ter no mínimo 32 bytes. Sem isso, `Program.cs` lança exceção e a aplicação não inicia.
-
-5. Aplique as migrations do Entity Framework:
+4. Aplique as migrations do Entity Framework:
 
    ```bash
    dotnet ef database update --project backend/CareerOS.Api/CareerOS.Api.csproj --startup-project backend/CareerOS.Api/CareerOS.Api.csproj
    ```
 
-   Esse comando usa o projeto da API como contexto e aplica o schema no banco `careeros`.
-
-6. Inicie a API com o profile HTTPS:
+5. Inicie a API com o profile HTTPS:
 
    ```bash
    dotnet run --project backend/CareerOS.Api/CareerOS.Api.csproj --launch-profile https
@@ -109,14 +133,6 @@ Mais detalhes: [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/API.md](docs/A
    - HTTP local: `http://localhost:5062`
    - Swagger: `https://localhost:7276/swagger/index.html`
    - Base consumida pelo frontend: `https://localhost:7276/api`
-
-7. Login Google é opcional. Para habilitar o fluxo social localmente, preencha também os valores não versionados usados pelo backend:
-
-   - `Authentication:Google:ClientId`
-   - `Authentication:Google:ClientSecret`
-   - `Authentication:FrontendBaseUrl` (padrão: `http://localhost:4200`)
-
-   Sem credenciais reais do Google Cloud, o login social não funciona. O restante da aplicação continua operando normalmente com login por e-mail e senha.
 
 ### Frontend
 
@@ -130,8 +146,6 @@ npm start
 
 O frontend será disponibilizado em `http://localhost:4200`.
 
-O frontend precisa da API no ar, porque consome `https://localhost:7276/api` e o CORS do backend libera apenas `http://localhost:4200`.
-
 ## Executar os testes
 
 ### Backend (xUnit)
@@ -140,7 +154,10 @@ O frontend precisa da API no ar, porque consome `https://localhost:7276/api` e o
 dotnet test CareerOS.sln
 ```
 
-Cobre, entre outros, o `PasswordHasher` (hash determinístico e verificação) e o `ExportService` (texto ATS localizado para pt/en/it, fallback de coleções com JSON customizado, e formatos DOCX/PDF).
+Cobre, entre outros:
+- `PasswordHasher` (hash determinístico e verificação)
+- `ExportService` (texto ATS localizado para pt/en/it, fallback de coleções com JSON customizado, e formatos DOCX/PDF)
+- `OpenBaoConfigurationProvider` (resiliência de fallback e carregamento de segredos em runtime)
 
 ### Frontend (Karma + Jasmine)
 
@@ -153,10 +170,9 @@ npm test
 
 ## Solução de problemas
 
-- Erro de JWT ausente ou curto: crie ou corrija `backend/CareerOS.Api/appsettings.Development.json` com `JwtOptions:SecretKey` de pelo menos 32 bytes. Esse erro vem do `Program.cs` e impede a inicialização.
-- Porta `7276` ocupada ou certificado HTTPS de desenvolvimento ausente: libere a porta, garanta que o profile `https` esteja disponível e, se necessário, confie no certificado local com `dotnet dev-certs https --trust`.
-- Banco não encontrado ou sem permissão: confirme que o banco `careeros` existe, que o usuário do `ConnectionStrings:CareerDatabase` tem permissão no PostgreSQL e que o servidor está rodando.
-- `npm test` falhando no Chrome headless: confirme que as dependências foram instaladas com `npm install` e que o ambiente possui o Chrome/Chromium exigido pelo Karma.
+- OpenBao não responde: Verifique se o container está ativo com `docker-compose ps` e se a porta 8200 está acessível.
+- Porta `7276` ocupada ou certificado HTTPS de desenvolvimento ausente: libere a porta e confie no certificado local com `dotnet dev-certs https --trust`.
+- Banco não encontrado ou sem permissão: confirme que o container do PostgreSQL está rodando via `docker-compose up -d`.
 
 ## Rotas da API (resumo)
 
@@ -184,4 +200,4 @@ npm test
 
 ## Estado atual
 
-A aplicação conta com API completa (auth, perfil e currículos), exportação multilíngue (PDF/DOCX/ATS), frontend Angular por etapas e testes unitários no backend e no frontend.
+A aplicação conta com API completa, exportação multilíngue (PDF/DOCX/ATS), frontend Angular por etapas, testes unitários abrangentes e gestão de segredos centralizada via OpenBao com fallback transparente para CI/CD.
