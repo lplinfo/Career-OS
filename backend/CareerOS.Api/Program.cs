@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using CareerOS.Api.Data;
 using CareerOS.Api.Domain;
+using CareerOS.Api.Infrastructure.OpenBao;
 using CareerOS.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +13,34 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure OpenBao Configuration Provider if enabled
+var openBaoEnabledVal = builder.Configuration["OpenBao:Enabled"]
+    ?? Environment.GetEnvironmentVariable("OpenBao__Enabled")
+    ?? Environment.GetEnvironmentVariable("BAO_ENABLED");
+
+if (bool.TryParse(openBaoEnabledVal, out var openBaoEnabled) && openBaoEnabled)
+{
+    var openBaoOptions = new OpenBaoOptions
+    {
+        Enabled = true,
+        Address = builder.Configuration["OpenBao:Address"]
+            ?? Environment.GetEnvironmentVariable("BAO_ADDR")
+            ?? Environment.GetEnvironmentVariable("VAULT_ADDR")
+            ?? "http://localhost:8200",
+        RoleId = builder.Configuration["OpenBao:RoleId"]
+            ?? Environment.GetEnvironmentVariable("BAO_ROLE_ID")
+            ?? Environment.GetEnvironmentVariable("VAULT_ROLE_ID"),
+        SecretId = builder.Configuration["OpenBao:SecretId"]
+            ?? Environment.GetEnvironmentVariable("BAO_SECRET_ID")
+            ?? Environment.GetEnvironmentVariable("VAULT_SECRET_ID"),
+        MountPoint = builder.Configuration["OpenBao:MountPoint"]
+            ?? Environment.GetEnvironmentVariable("BAO_MOUNT_POINT")
+            ?? "secret"
+    };
+
+    builder.Configuration.AddOpenBao(openBaoOptions);
+}
 
 // Add services to the container.
 

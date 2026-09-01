@@ -8,6 +8,7 @@ CareerOS é uma aplicação **front-end + back-end**:
 
 - **Backend**: API REST em ASP.NET Core 9 (`backend/CareerOS.Api`), usando Entity Framework Core com PostgreSQL.
 - **Frontend**: aplicação Angular 21 standalone (`frontend/`), um componente monolítico `App` que concentra toda a lógica de UI, formulários e chamadas HTTP.
+- **Segredos**: Gestão centralizada via OpenBao (Vault-compatible) com autenticação AppRole e suporte a fallback gracioso.
 
 O frontend conversa com a API via `HttpClient` em `https://localhost:7276/api`, habilitado pelo CORS configurado em `Program.cs` para `http://localhost:4200`.
 
@@ -20,6 +21,8 @@ backend/CareerOS.Api/
 ├── Data/
 │   └── CareerDbContext.cs# DbContext do EF Core
 ├── Domain/               # Entidades (CandidateProfile, Resume, WorkExperience, ...)
+├── Infrastructure/
+│   └── OpenBao/          # Custom ConfigurationProvider para OpenBao (VaultSharp)
 ├── Migrations/           # Migrations do EF Core
 ├── Services/
 │   └── ExportService.cs  # Geração de PDF, DOCX e texto ATS
@@ -32,6 +35,7 @@ backend/CareerOS.Api/
 - **Controller**: recebe e valida as requisições, orquestra o acesso ao banco via `CareerDbContext` e retorna `ActionResult`.
 - **Domain**: entidades puras (sem lógica de persistência).
 - **Contracts**: DTOs de entrada desacoplados das entidades, permitindo controlar o que a API aceita.
+- **Infrastructure**: provedores de infraestrutura (gestão de segredos com OpenBao).
 - **Services / Utils**: lógica reutilizável (exportação de currículos; hash de senha).
 
 ## Modelo de dados
@@ -52,6 +56,43 @@ User ──┐
        │        └──< Certification
        │        └──< Resume (Language, TargetCountry, export flags)
 ```
+
+## Gestão de Segredos (OpenBao)
+
+A aplicação suporta a centralização de segredos sensíveis em runtime através do **OpenBao** (fork comunitário do HashiCorp Vault com API compatível).
+
+### Componentes e Arquitetura
+
+- **OpenBao Server (Docker)**: Serviço OpenBao iniciado via `docker-compose.yml` na porta `8200`.
+- **Custom Configuration Provider (.NET)**: Localizado em `backend/CareerOS.Api/Infrastructure/OpenBao/`:
+  - `OpenBaoOptions`: Propriedades de configuração (`Address`, `RoleId`, `SecretId`, `MountPoint`).
+  - `OpenBaoConfigurationSource` / `OpenBaoConfigurationProvider`: Implementações de `IConfigurationSource` e `ConfigurationProvider` do .NET com o SDK `VaultSharp`.
+  - `OpenBaoConfigurationExtensions`: Método de extensão `AddOpenBao` para registro no `IConfigurationBuilder`.
+
+### Fluxo de Funcionamento
+
+```
+┌─────────────────┐       AppRole Auth        ┌─────────────────┐
+│                 │ ────────────────────────> │                 │
+│                 │   (ROLE_ID & SECRET_ID)   │                 │
+│  CareerOS API   │                           │  OpenBao Server │
+│  (.NET Provider)│  Read KV v2 secrets       │  (Port 8200)    │
+│                 │ <──────────────────────── │                 │
+└────────┬────────┘                           └─────────────────┘
+         │
+         ▼
+  Popula Configuration
+  (ConnectionStrings, JwtOptions, Google Auth)
+```
+
+1. Na inicialização do `Program.cs`, a API checa a presença do parâmetro `OpenBao:Enabled=true` ou da variável `OpenBao__Enabled=true`.
+2. Se habilitado, o `OpenBaoConfigurationProvider` efetua a autenticação AppRole usando `ROLE_ID` e `SECRET_ID`.
+3. O provider lê os caminhos KV v2 sob `secret/data/careeros/*`:
+   - `careeros/database`: `connectionstring` -> `ConnectionStrings:CareerDatabase`
+   - `careeros/jwt`: `secretkey` -> `JwtOptions:SecretKey`
+   - `careeros/auth-google`: `clientid` & `clientsecret` -> `Authentication:Google:ClientId` & `Authentication:Google:ClientSecret`
+4. Mapeia os segredos nas chaves de configuração do .NET.
+5. **Fallback Transparente**: Se o OpenBao estiver desabilitado ou indisponível (ex: CI/CD ou ambiente de teste sem container), o provider registra um log de aviso e mantém os valores padrão do `appsettings.json`, preservando a integridade das suítes de teste.
 
 ## Fluxo de dados (exportação de currículo)
 
@@ -91,7 +132,8 @@ Projeto xUnit que referencia a API e testa:
 
 - **PasswordHasherTests**: determinismo do hash, diferenciação entre senhas, `VerifyPassword` para senha correta/incorreta.
 - **ExportServiceTests**: texto ATS localizado (en/it/pt), os dois ramos de resolução de coleções (JSON customizado e fallback para o perfil, incluindo JSON malformado), e magic bytes de DOCX (`PK`) e PDF (`%PDF`).
+- **OpenBaoConfigurationProviderTests**: resiliência de fallback quando o OpenBao está indisponível e teste da fonte de configuração customizada.
 
 ### Frontend
 
-Suíte Karma + Jasmine (em implementação) cobrindo validators e a lógica testável do componente `App` com mocks de `HttpClient` (`provideHttpClientTesting`) e `localStorage` fake.
+Suíte Karma + Jasmine cobrindo validators e a lógica testável do componente `App` com mocks de `HttpClient` (`provideHttpClientTesting`) e `localStorage` fake.
