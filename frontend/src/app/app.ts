@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { AuthSessionService } from './auth/auth-session.service';
 import { UserSession } from './auth/auth.models';
+import { CandidateProfileService } from './candidate-profile.service';
 
 interface ResumeDto {
   id?: string;
@@ -66,6 +67,7 @@ export class App implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly authSession = inject(AuthSessionService);
+  private readonly candidateProfileService = inject(CandidateProfileService);
 
   readonly apiUrl = 'https://localhost:7276/api';
 
@@ -517,16 +519,16 @@ export class App implements OnInit, OnDestroy {
         displayOrder: x.order
       }))
     };
-    const request = this.candidateId
-      ? this.http.put<any>(`${this.apiUrl}/candidate-profiles/${this.candidateId}`, payload)
-      : this.http.post<any>(`${this.apiUrl}/candidate-profiles`, payload);
-
-    request.subscribe({
-      next: (res) => {
-        this.candidateId = res.id;
+    this.candidateProfileService.save(this.candidateId, payload).subscribe({
+      next: (res: any) => {
+        if (res?.id) {
+          this.candidateId = res.id;
+        }
         this.saveDraft();
         this.showStatus('Perfil salvo na nuvem com sucesso!', true);
-        this.loadResumes(res.id);
+        if (this.candidateId) {
+          this.loadResumes(this.candidateId);
+        }
       },
       error: (err) => {
         console.error('Erro ao salvar perfil', err);
@@ -670,10 +672,7 @@ export class App implements OnInit, OnDestroy {
     this.isImportingLinkedin = true;
     this.cdr.detectChanges();
 
-    const formData = new FormData();
-    formData.append('file', file);
-
-    this.http.post<any>(`${this.apiUrl}/candidate-profiles/import-linkedin`, formData).subscribe({
+    this.candidateProfileService.importLinkedin(file).subscribe({
       next: (res) => {
         this.isImportingLinkedin = false;
         this.importedLinkedinData = res.parsedProfile;
