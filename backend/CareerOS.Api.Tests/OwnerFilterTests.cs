@@ -40,11 +40,12 @@ public class OwnerFilterTests
         await db.SaveChangesAsync();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new CandidateProfilesController(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
+        var service = new CandidateProfileService(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
+        var controller = new CandidateProfilesController(service);
 
         var actionResult = await controller.GetAll();
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var profiles = Assert.IsAssignableFrom<IEnumerable<CandidateProfile>>(okResult.Value);
+        var profiles = Assert.IsAssignableFrom<IEnumerable<CandidateProfileResponse>>(okResult.Value);
 
         var singleProfile = Assert.Single(profiles);
         Assert.Equal(userProfileId, singleProfile.Id);
@@ -61,7 +62,8 @@ public class OwnerFilterTests
         await db.SaveChangesAsync();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new CandidateProfilesController(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
+        var service = new CandidateProfileService(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
+        var controller = new CandidateProfilesController(service);
 
         var actionResult = await controller.Get(otherProfileId);
         Assert.IsType<NotFoundResult>(actionResult.Result);
@@ -74,7 +76,8 @@ public class OwnerFilterTests
         var userProfileId = Guid.NewGuid();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new CandidateProfilesController(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
+        var service = new CandidateProfileService(db, currentUser, new LinkedinParserService(), new LinkedinGapAnalysisService());
+        var controller = new CandidateProfilesController(service);
 
         var request = new CandidateProfileRequest
         {
@@ -101,11 +104,12 @@ public class OwnerFilterTests
         await db.SaveChangesAsync();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new ResumesController(db, currentUser);
+        var service = new ResumeService(db, currentUser);
+        var controller = new ResumesController(service);
 
         var actionResult = await controller.GetAll();
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var resumes = Assert.IsAssignableFrom<IEnumerable<Resume>>(okResult.Value);
+        var resumes = Assert.IsAssignableFrom<IEnumerable<ResumeResponse>>(okResult.Value);
 
         var singleResume = Assert.Single(resumes);
         Assert.Equal(userProfileId, singleResume.CandidateProfileId);
@@ -119,7 +123,8 @@ public class OwnerFilterTests
         var maliciousProfileId = Guid.NewGuid();
 
         var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
-        var controller = new ResumesController(db, currentUser);
+        var service = new ResumeService(db, currentUser);
+        var controller = new ResumesController(service);
 
         var request = new ResumeRequest
         {
@@ -133,7 +138,7 @@ public class OwnerFilterTests
 
         var actionResult = await controller.Create(request);
         var createdResult = Assert.IsType<CreatedAtActionResult>(actionResult.Result);
-        var createdResume = Assert.IsType<Resume>(createdResult.Value);
+        var createdResume = Assert.IsType<ResumeResponse>(createdResult.Value);
 
         Assert.Equal(userProfileId, createdResume.CandidateProfileId);
     }

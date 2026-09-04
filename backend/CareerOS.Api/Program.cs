@@ -46,6 +46,7 @@ if (bool.TryParse(openBaoEnabledVal, out var openBaoEnabled) && openBaoEnabled)
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddProblemDetails();
 
 // Configure JwtOptions
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
@@ -59,6 +60,8 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<ILinkedinParserService, LinkedinParserService>();
 builder.Services.AddScoped<ILinkedinGapAnalysisService, LinkedinGapAnalysisService>();
+builder.Services.AddScoped<ICandidateProfileService, CandidateProfileService>();
+builder.Services.AddScoped<IResumeService, ResumeService>();
 builder.Services.AddHttpClient<GoogleLoginExchangeService>();
 builder.Services.AddHttpContextAccessor();
 
@@ -161,6 +164,8 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 // Configure the HTTP request pipeline.
 app.MapOpenApi();
 app.UseSwagger();
@@ -180,4 +185,3 @@ app.MapControllers();
 app.Run();
 
 public partial class Program;
-
