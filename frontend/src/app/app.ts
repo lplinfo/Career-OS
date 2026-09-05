@@ -6,6 +6,7 @@ import { RouterOutlet } from '@angular/router';
 import { AuthSessionService } from './auth/auth-session.service';
 import { UserSession } from './auth/auth.models';
 import { CandidateProfileService } from './candidate-profile.service';
+import { environment } from '../environments/environment';
 
 interface ResumeDto {
   id?: string;
@@ -69,7 +70,7 @@ export class App implements OnInit, OnDestroy {
   private readonly authSession = inject(AuthSessionService);
   private readonly candidateProfileService = inject(CandidateProfileService);
 
-  readonly apiUrl = 'https://localhost:7276/api';
+  readonly apiUrl = environment.apiUrl;
 
   private readonly authChangedListener = () => this.loadUserSession();
 
