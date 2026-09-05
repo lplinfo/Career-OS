@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CandidateProfileService } from './candidate-profile.service';
+import { environment } from '../environments/environment';
 
 describe('CandidateProfileService', () => {
   let service: CandidateProfileService;
@@ -36,7 +37,7 @@ describe('CandidateProfileService', () => {
       expect(res).toEqual(mockResponse);
     });
 
-    const req = httpMock.expectOne('https://localhost:7276/api/candidate-profiles');
+    const req = httpMock.expectOne(`${environment.apiUrl}/candidate-profiles`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(mockProfile);
     req.flush(mockResponse);
@@ -48,7 +49,7 @@ describe('CandidateProfileService', () => {
 
     service.save(profileId, mockProfile).subscribe();
 
-    const req = httpMock.expectOne(`https://localhost:7276/api/candidate-profiles/${profileId}`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/candidate-profiles/${profileId}`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(mockProfile);
     req.flush({});

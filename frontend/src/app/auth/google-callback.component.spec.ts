@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GoogleCallbackComponent } from './google-callback.component';
 import { AuthSessionService } from './auth-session.service';
+import { environment } from '../../environments/environment';
 
 describe('GoogleCallbackComponent', () => {
   let component: GoogleCallbackComponent;
@@ -49,7 +50,7 @@ describe('GoogleCallbackComponent', () => {
   it('should exchange code and establish session on init', () => {
     fixture.detectChanges(); // triggers ngOnInit
 
-    const req = httpMock.expectOne('https://localhost:7276/api/auth/exchange-google');
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/exchange-google`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ code: 'valid_code_123' });
 

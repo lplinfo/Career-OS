@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthSessionService } from './auth-session.service';
 import { UserSession } from './auth.models';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-google-callback',
@@ -28,7 +29,7 @@ export class GoogleCallbackComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly authSession = inject(AuthSessionService);
 
-  readonly apiUrl = 'https://localhost:7276/api';
+  readonly apiUrl = environment.apiUrl;
 
   loading = true;
   error = '';
