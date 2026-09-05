@@ -1,4 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.careeros.example.com/api' // TODO: definir URL real de produção no deploy
+  // TODO: definir URL real de produção antes do primeiro deploy.
+  // Por enquanto aponta para o backend local para não quebrar ambientes atuais.
+  apiUrl: 'https://localhost:7276/api'
 };
