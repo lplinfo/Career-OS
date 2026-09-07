@@ -7,12 +7,12 @@
 ### 1.1 Backend já implementado [DONE]
 
 - `LinkedinParserService` implementa `ILinkedinParserService` e extrai texto de PDF usando `UglyToad.PdfPig`.
-- O parser reconhece cabeçalho, e-mail, localização e seções em português/inglês para resumo, experiência, formação, certificações, competências, idiomas e contato.
+- O parser reconhece cabeçalho, e-mail, localização e seções em português/inglês para resumo, experiência, formação, certificações, competências, idiomas e contato. (Nota: a seção `CONTACT`/`Contato` é reconhecida como cabeçalho, mas **não é processada** — telefone não é extraído, apenas e-mail e localização do cabeçalho.)
 - O parser produz `ParsedCandidateProfileDto`, com experiências, formação e certificações estruturadas, além de competências e idiomas.
 - `LinkedinGapAnalysisService` implementa `ILinkedinGapAnalysisService` e calcula `CompletenessScore`, `MissingFields` e recomendações com severidade.
 - Os contratos `ParsedCandidateProfileDto`, `GapAnalysisDto`, `GapItemDto` e `LinkedinImportResponseDto` existem em `Contracts/LinkedinImportContracts.cs`.
 - `CandidateProfileService.ImportLinkedin(IFormFile)` valida arquivo vazio e extensão/content-type PDF, faz parse e análise e retorna `ParsedProfile` + `GapAnalysis`.
-- `POST /api/candidate-profiles/import-linkedin` existe em `CandidateProfilesController`, exige autenticação pelo `[Authorize]` da controller e responde `200` ou `400` com `message`.
+- `POST /api/candidate-profiles/import-linkedin` existe em `CandidateProfilesController`, exige autenticação pelo `[Authorize]` da controller. Responde `200` em caso de sucesso e `400` quando a validação de `ImportLinkedin` retorna erro (arquivo vazio/ausente ou tipo/extensão não-PDF), mas **não captura exceções de parse**: um arquivo com bytes inválidos termina em `500` através de `PdfDocument.Open`.
 - Os serviços estão registrados no DI em `Program.cs`.
 
 ### 1.2 Frontend já implementado [DONE]
@@ -37,7 +37,7 @@
 2. **Merge de dados:** o comportamento atual é “substituir arrays inteiros quando o array importado não está vazio”, não um merge semântico lado a lado. Não há seleção por item para experiências, formação ou certificações, nem proteção contra substituir alterações do usuário.
 3. **Mapeamento incompleto:** `Skills` e `Languages` são extraídos e devolvidos, mas não existem nos campos do `CandidateProfile`, no `CandidateProfileRequest/Response` ou no formulário atual. `PreferredName` também não é extraído. O mapeamento de educação usa valores artificiais (`Bacharelado` e `2020-01-01`) quando o PDF não fornece esses dados.
 4. **Robustez do parser:** não há fixtures reais de PDFs, teste do parser, teste de PDF vazio/imagem-only, validação de limites, nem contrato explícito para layouts diferentes. A heurística de experiência, formação e certificação depende da ordem das linhas e pode atribuir dados incorretos.
-5. **Tratamento de erro:** arquivo com extensão `.pdf` mas conteúdo inválido pode lançar exceção; não há limite de tamanho, validação de assinatura/magic bytes, timeout/cancelamento, mensagem específica para PDF sem texto ou telemetria. O backend aceita PDF se content-type **ou** extensão for compatível.
+5. **Tratamento de erro:** arquivo com extensão `.pdf` mas conteúdo inválido pode lançar exceção (`PdfDocument.Open` → `500`); não há limite de tamanho, validação de assinatura/magic bytes, timeout/cancelamento, mensagem específica para PDF sem texto ou telemetria. O backend aceita PDF se content-type **ou** extensão for compatível.
 6. **Testes de integração:** não há teste da rota autenticada com `multipart/form-data`, respostas `400`, isolamento do usuário, PDF válido e composição do DTO completo.
 7. **Testes do comportamento do modal:** não há testes para seleção do arquivo, sucesso/erro da importação, abertura/fechamento, aplicação de campo, mesclagem de arrays, preservação de dados e chamada de persistência.
 8. **Acessibilidade:** o modal não declara `role="dialog"`, nome acessível, `aria-modal`, foco inicial/retorno, fechamento por `Escape` ou bloqueio de foco; o input de arquivo está visualmente oculto sem fluxo alternativo claramente testado.
