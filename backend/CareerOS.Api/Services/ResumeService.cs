@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using CareerOS.Api.Contracts;
 using CareerOS.Api.Data;
@@ -125,14 +126,14 @@ public class ResumeService(CareerDbContext db, ICurrentUser currentUser) : IResu
         return (docxBytes, $"resume_{resume.Language}.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     }
 
-    public async Task<(string Content, string ContentType)?> ExportAtsAsync(Guid id)
+    public async Task<(byte[] FileBytes, string FileName, string ContentType)?> ExportAtsAsync(Guid id)
     {
         var resumeAndProfile = await GetResumeAndProfileAsync(id);
         if (resumeAndProfile is null) return null;
 
         var (resume, profile) = resumeAndProfile.Value;
         var text = ExportService.GenerateAtsText(resume, profile);
-        return (text, "text/plain");
+        return (Encoding.UTF8.GetBytes(text), $"resume_{resume.Language}.txt", "text/plain");
     }
 
     private async Task<(Resume Resume, CandidateProfile Profile)?> GetResumeAndProfileAsync(Guid id)

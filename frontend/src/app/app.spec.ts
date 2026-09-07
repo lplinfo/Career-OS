@@ -334,4 +334,50 @@ describe('App Component and Domain Logic', () => {
       expect(component.currentStep).toBe(1);
     });
   });
+
+  describe('exportResume and Filename Extraction', () => {
+    beforeEach(() => {
+      createComponent();
+    });
+
+    it('should extract filename from Content-Disposition header when exporting ATS resume', () => {
+      const apiUrl = component.apiUrl;
+      const fakeAnchor = { href: '', download: '', click: jasmine.createSpy('click') };
+      spyOn(document, 'createElement').and.callFake((tagName: string) => {
+        if (tagName === 'a') return fakeAnchor as any;
+        return document.createElement(tagName);
+      });
+      spyOn(URL, 'createObjectURL').and.returnValue('blob:http://localhost/fake-url');
+
+      component.exportResume('resume-123', 'ats');
+
+      const req = httpMock.expectOne(`${apiUrl}/resumes/resume-123/export/ats`);
+      expect(req.request.method).toBe('GET');
+
+      req.flush(new Blob(['test content'], { type: 'text/plain' }), {
+        headers: { 'Content-Disposition': 'attachment; filename="resume_pt.txt"' }
+      });
+
+      expect(fakeAnchor.download).toBe('resume_pt.txt');
+      expect(fakeAnchor.click).toHaveBeenCalled();
+    });
+
+    it('should fallback to default filename when Content-Disposition header is missing', () => {
+      const apiUrl = component.apiUrl;
+      const fakeAnchor = { href: '', download: '', click: jasmine.createSpy('click') };
+      spyOn(document, 'createElement').and.callFake((tagName: string) => {
+        if (tagName === 'a') return fakeAnchor as any;
+        return document.createElement(tagName);
+      });
+      spyOn(URL, 'createObjectURL').and.returnValue('blob:http://localhost/fake-url');
+
+      component.exportResume('resume-123', 'pdf');
+
+      const req = httpMock.expectOne(`${apiUrl}/resumes/resume-123/export/pdf`);
+      req.flush(new Blob(['pdf content'], { type: 'application/pdf' }));
+
+      expect(fakeAnchor.download).toBe('curriculo.pdf');
+      expect(fakeAnchor.click).toHaveBeenCalled();
+    });
+  });
 });

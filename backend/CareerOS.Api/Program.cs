@@ -129,7 +129,9 @@ builder.Services.AddAuthentication(options =>
 
 // Configure Cors
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy => policy
-    .WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
+    .WithOrigins("http://localhost:4200")
+    .WithExposedHeaders("Content-Disposition")
+    .AllowAnyHeader().AllowAnyMethod()));
 
 // Configure Swagger with Bearer authorization
 builder.Services.AddSwaggerGen(options =>
