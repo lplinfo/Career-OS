@@ -142,4 +142,43 @@ public class OwnerFilterTests
 
         Assert.Equal(userProfileId, createdResume.CandidateProfileId);
     }
+
+    [Fact]
+    public async Task ResumesController_ExportAts_ReturnsFileResultWithCorrectFilename()
+    {
+        using var db = GetInMemoryDbContext(nameof(ResumesController_ExportAts_ReturnsFileResultWithCorrectFilename));
+        var userProfileId = Guid.NewGuid();
+        var resumeId = Guid.NewGuid();
+
+        db.CandidateProfiles.Add(new CandidateProfile
+        {
+            Id = userProfileId,
+            FullName = "Jane Doe",
+            ProfessionalTitle = "Software Developer",
+            Email = "jane@example.com"
+        });
+
+        db.Resumes.Add(new Resume
+        {
+            Id = resumeId,
+            CandidateProfileId = userProfileId,
+            Language = "en",
+            CustomizedTitle = "Senior Developer",
+            Skills = "C#, .NET",
+            CustomizedSummary = "Summary",
+            TargetCountry = "US"
+        });
+        await db.SaveChangesAsync();
+
+        var currentUser = new TestCurrentUser { CandidateProfileId = userProfileId };
+        var service = new ResumeService(db, currentUser);
+        var controller = new ResumesController(service);
+
+        var actionResult = await controller.ExportAts(resumeId);
+        var fileResult = Assert.IsType<FileContentResult>(actionResult);
+
+        Assert.Equal("text/plain", fileResult.ContentType);
+        Assert.Equal("resume_en.txt", fileResult.FileDownloadName);
+        Assert.NotEmpty(fileResult.FileContents);
+    }
 }

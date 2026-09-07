@@ -93,6 +93,6 @@ public class ResumesController(IResumeService resumeService) : ControllerBase
         var export = await resumeService.ExportAtsAsync(id);
         if (export is null) return NotFound();
 
-        return Content(export.Value.Content, export.Value.ContentType, System.Text.Encoding.UTF8);
+        return File(export.Value.FileBytes, export.Value.ContentType, export.Value.FileName);
     }
 }

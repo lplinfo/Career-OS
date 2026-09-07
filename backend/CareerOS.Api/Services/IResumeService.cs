@@ -15,5 +15,5 @@ public interface IResumeService
     Task<bool> DeleteAsync(Guid id);
     Task<(byte[] FileBytes, string FileName, string ContentType)?> ExportPdfAsync(Guid id);
     Task<(byte[] FileBytes, string FileName, string ContentType)?> ExportDocxAsync(Guid id);
-    Task<(string Content, string ContentType)?> ExportAtsAsync(Guid id);
+    Task<(byte[] FileBytes, string FileName, string ContentType)?> ExportAtsAsync(Guid id);
 }
