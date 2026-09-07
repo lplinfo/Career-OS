@@ -7,3 +7,4 @@
 | PR-033 | `fix/PR-033-app-candidate-profile-service` | Refactor: usar `CandidateProfileService` no componente `App` (Code Review §4.2) | Concluído |
 | PR-034 | `fix/PR-034-service-layer-dtos` | Refactor: service layer, response DTOs e global exception handler (Code Review §5.1+§5.2) | Concluído |
 | PR-035 | `fix/PR-035-environment-api-url` | Refactor: mover API URL hardcoded para environment files (Code Review §3.3) | Concluído |
+| PR-036 | `fix/PR-036-export-filenames` | Fix: usar filenames do backend nos exports via Content-Disposition (Code Review §3.2) | Concluído |
