@@ -633,30 +633,32 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
+  private getDownloadName(contentDisposition: string | null, fallback: string): string {
+    if (!contentDisposition) return fallback;
+    const star = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(contentDisposition);
+    if (star) { try { return decodeURIComponent(star[1].trim()); } catch { /* ignore */ } }
+    const plain = /filename="?([^";]+)"?/i.exec(contentDisposition);
+    return plain ? plain[1].trim() : fallback;
+  }
+
   exportResume(id: string, format: 'pdf' | 'docx' | 'ats') {
     const url = `${this.apiUrl}/resumes/${id}/export/${format}`;
-    if (format === 'ats') {
-      this.http.get(url, { responseType: 'text' }).subscribe({
-        next: (text) => {
-          const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const fallback = format === 'ats' ? 'curriculo_ats.txt' : `curriculo.${format}`;
+
+    this.http.get(url, { observe: 'response', responseType: 'blob' }).subscribe({
+      next: (response) => {
+        const contentDisposition = response.headers.get('Content-Disposition') || response.headers.get('content-disposition');
+        const filename = this.getDownloadName(contentDisposition, fallback);
+        const blob = response.body;
+        if (blob) {
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
-          link.download = `curriculo_ats.txt`;
+          link.download = filename;
           link.click();
-        },
-        error: (err) => console.error(err)
-      });
-    } else {
-      this.http.get(url, { responseType: 'blob' }).subscribe({
-        next: (blob) => {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = `curriculo.${format}`;
-          link.click();
-        },
-        error: (err) => console.error(err)
-      });
-    }
+        }
+      },
+      error: (err) => console.error(err)
+    });
   }
 
   // LinkedIn Import Methods
