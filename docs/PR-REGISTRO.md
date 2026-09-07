@@ -8,3 +8,4 @@
 | PR-034 | `fix/PR-034-service-layer-dtos` | Refactor: service layer, response DTOs e global exception handler (Code Review §5.1+§5.2) | Concluído |
 | PR-035 | `fix/PR-035-environment-api-url` | Refactor: mover API URL hardcoded para environment files (Code Review §3.3) | Concluído |
 | PR-036 | `fix/PR-036-export-filenames` | Fix: usar filenames do backend nos exports via Content-Disposition (Code Review §3.2) | Concluído |
+| PR-037 | `feature/PR-037-linkedin-import-plan` | Docs: plano atualizado de Import from LinkedIn (Tarefa #10) | Concluído |
