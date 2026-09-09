@@ -14,6 +14,8 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 // Configure OpenBao Configuration Provider if enabled
 var openBaoEnabledVal = builder.Configuration["OpenBao:Enabled"]
     ?? Environment.GetEnvironmentVariable("OpenBao__Enabled")
@@ -169,6 +171,8 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
+app.MapDefaultEndpoints();
+
 app.MapOpenApi();
 app.UseSwagger();
 app.UseSwaggerUI();
