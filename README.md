@@ -11,11 +11,13 @@ CareerOS é uma aplicação para organizar o histórico profissional de candidat
 - Exportação de currículo em três formatos: **PDF**, **DOCX** e **texto ATS**.
 - Rascunho automático do perfil no `localStorage` do navegador.
 - Gestão centralizada de segredos com **OpenBao** (Vault-compatible) e suporte a AppRole authentication.
+- Orquestração local com **.NET Aspire** (Dashboard, OpenTelemetry tracing/metrics e geração de manifest cloud).
 
 ## Tecnologias
 
 | Camada     | Tecnologia                          |
 |------------|-------------------------------------|
+| Orquestração| .NET Aspire 9                      |
 | API        | ASP.NET Core 9 / C#                 |
 | Frontend   | Angular 21 (standalone)             |
 | Dados      | PostgreSQL + Entity Framework Core  |
@@ -28,14 +30,17 @@ CareerOS é uma aplicação para organizar o histórico profissional de candidat
 
 ```
 Career-OS/
+├── CareerOS.AppHost/          # .NET Aspire App Host (orquestrador da aplicação)
+├── CareerOS.ServiceDefaults/  # Padrões de serviço (OpenTelemetry, Health Checks, Resiliência)
 ├── backend/
-│   └── CareerOS.Api/          # API REST ASP.NET Core (Controllers, Domain, Migrations)
+│   ├── CareerOS.Api/          # API REST ASP.NET Core (Controllers, Domain, Migrations)
 │   └── CareerOS.Api.Tests/    # Testes unitários xUnit
 ├── scripts/
 │   └── openbao-bootstrap.sh   # Script de bootstrap e seeding do OpenBao
 ├── frontend/                  # Aplicação Angular (formulário por etapas)
-├── docker-compose.yml         # Containeres OpenBao e PostgreSQL
-├── CareerOS.sln               # Solução .NET (API + testes)
+├── deploy/                    # Manifest de publicação gerado pelo Aspire
+├── docker-compose.yml         # Containers OpenBao e PostgreSQL (fallback local)
+├── CareerOS.sln               # Solução .NET
 └── docs/                      # Documentação (arquitetura e API)
 ```
 
@@ -45,7 +50,7 @@ Mais detalhes: [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/API.md](docs/A
 
 - [.NET SDK 9](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Node.js](https://nodejs.org/) 20 ou superior, com `npm`
-- [Docker e Docker Compose](https://www.docker.com/) para rodar OpenBao e PostgreSQL
+- [Docker](https://www.docker.com/) ou Podman para o runtime de containers do .NET Aspire
 - Tool global `dotnet-ef` instalada:
 
   ```bash
@@ -54,13 +59,44 @@ Mais detalhes: [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/API.md](docs/A
 
 - Angular CLI instalado globalmente é opcional; o projeto também funciona com `npx ng` e `npm`
 
+## Desenvolvimento com .NET Aspire
+
+O CareerOS utiliza o **.NET Aspire** para orquestrar a stack completa de desenvolvimento local (PostgreSQL, OpenBao, API e Frontend Angular) com telemetria integrada, métricas, logs centralizados e dashboard unificado.
+
+### 1. Iniciar a Aplicação via Aspire AppHost
+
+Para subir toda a aplicação e suas dependências de infraestrutura com um único comando:
+
+```bash
+dotnet run --project CareerOS.AppHost/CareerOS.AppHost.csproj
+```
+
+O .NET Aspire iniciará:
+- **Dashboard Aspire**: Acessível na URL indicada no terminal (geralmente `https://localhost:18888` ou similar) com gráficos de OpenTelemetry, traces e logs.
+- **PostgreSQL**: Container PostgreSQL 16 Alpine persistente.
+- **OpenBao**: Container OpenBao Vault-compatible escutando na porta `8200`.
+- **CareerOS.Api**: API REST escutando em `https://localhost:7276` e `http://localhost:5062`.
+- **CareerOS.Frontend**: Aplicação Angular escutando em `http://localhost:4200`.
+
+> **Nota sobre Runtime de Containers**: O Aspire requer Docker Desktop, Docker Engine ou Podman rootless (ex: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`). Se preferir rodar sem o AppHost do Aspire, o arquivo `docker-compose.yml` continua disponível como fallback.
+
+### 2. Gerar Manifest de Publicação (Cloud / Azure Container Apps - ACA)
+
+O Aspire permite exportar um manifest de publicação JSON em formato padrão (`aspire-8.0.json`) para provisionamento em plataformas de nuvem, como Azure Container Apps (ACA) ou instâncias Kubernetes via `azd` ou ferramentas IAC:
+
+```bash
+dotnet run --project CareerOS.AppHost/CareerOS.AppHost.csproj -- --publisher manifest --output-path deploy/manifest.json
+```
+
+O arquivo gerado em `deploy/manifest.json` descreve os recursos da aplicação, imagens, parâmetros de banco e segredos. Para migração inicial em nuvem (ACA), os containers de banco (Postgres) e cofre (OpenBao) são definidos como recursos de container, podendo posteriormente ser substituídos por serviços gerenciados (Azure Database for PostgreSQL / Azure Key Vault).
+
 ## Gestão de Segredos com OpenBao
 
 O CareerOS utiliza o **OpenBao** (fork comunitário do HashiCorp Vault com API compatível) para gerenciar segredos em runtime (connection string do PostgreSQL, chave secreta JWT e credenciais do Google OAuth).
 
-### 1. Subir a Infraestrutura (Docker Compose)
+### 1. Subir a Infraestrutura (Docker Compose - Fallback)
 
-Suba os serviços do OpenBao e PostgreSQL em containers Docker:
+Caso prefira subir apenas a infraestrutura sem o Aspire AppHost:
 
 ```bash
 docker-compose up -d
@@ -95,7 +131,7 @@ dotnet run --project backend/CareerOS.Api/CareerOS.Api.csproj --launch-profile h
 
 Caso o OpenBao esteja desativado (`OpenBao__Enabled=false` ou não definido) ou indisponível durante a inicialização, o custom `ConfigurationProvider` no .NET captura o evento e mantém as configurações padrão locais. Isso garante que o pipeline de CI/CD e testes unitários passem de forma resiliente sem depender de instâncias externas de cofre.
 
-## Executar localmente
+## Executar localmente (Modo Tradicional)
 
 ### Backend
 
@@ -200,4 +236,4 @@ npm test
 
 ## Estado atual
 
-A aplicação conta com API completa, exportação multilíngue (PDF/DOCX/ATS), frontend Angular por etapas, testes unitários abrangentes e gestão de segredos centralizada via OpenBao com fallback transparente para CI/CD.
+A aplicação conta com API completa, exportação multilíngue (PDF/DOCX/ATS), frontend Angular por etapas, orquestração local com .NET Aspire, testes unitários abrangentes e gestão de segredos centralizada via OpenBao com fallback transparente para CI/CD.
